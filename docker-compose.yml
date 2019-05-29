@@ -1,0 +1,30 @@
+version: "3.5"
+
+services:
+  db:
+    container_name: ioviz_db
+    build:
+      context: ./docker-postgis
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/data/:/mnt/
+    ports:
+      - ${POSTGRES_PORT}:5432
+
+  app:
+    container_name: ioviz_app
+    build:
+      context: ./docker-rshiny
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./app:/srv/shiny-server
+
+volumes:
+  pgdata:
+    driver: local
