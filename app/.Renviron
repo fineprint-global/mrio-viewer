@@ -1,5 +1,0 @@
-db_host=ioviz_db
-db_port=5454
-db_name=fabio
-db_user=app
-db_password=secret

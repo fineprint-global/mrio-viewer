@@ -28,6 +28,9 @@ vignettes/*.pdf
 /*_cache/
 /cache/
 
+# Specific R markdown output
+README.html
+
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
@@ -35,3 +38,7 @@ vignettes/*.pdf
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
 .Rproj.user
+
+# Ignore files that store confidential information
+.env
+*/.Renviron
