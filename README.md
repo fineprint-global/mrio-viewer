@@ -67,6 +67,7 @@ There are two ways to run this app.
 
 1. You can run it as is, with FABIO pre-loaded into the database.
 2. You can use your own input-output table, which requires you to adapt the scripts in the [input-output-to-db](https://github.com/fineprint-global/io-visualization/tree/master/db/input-output-to-db) directory.
+3. You can leave the database as is and change the visualizations.
 
 #### 1. Run as is
 
@@ -76,10 +77,59 @@ There are two ways to run this app.
 4. Navigate to the root directory (io-visualization) with a shell of your choice and run the following command:
 `docker-compose up -d`
 
-Now both, the ioviz_app (RShiny app) and the ioviz_db (postgis database) should be running on ports specified in the `docker-compose.yml`.
+Now both, the `ioviz_app` (RShiny app) and the `ioviz_db` (postgis database) should be running on ports specified in the `docker-compose.yml` on your localhost (e.g. ports `80` and `5454` respectively). To verify that both containers are running and the ports are correct, you can run `docker-compose ps` (in the root directory) or `docker ps` (anywhere).
+
+You should now be able to see the app running at [localhost:80](localhost:80) or – if not `80` – at the port you specified in `SHINY_PORT`.
+
+If there are any problems, check out the [troubleshooting](#troubleshooting) section.
 
 #### 2. Use your own input-output table
-More detailed instructions on this will come soon, but you will have to adjust the main.R located in the [input-output-to-db](https://github.com/fineprint-global/io-visualization/tree/master/db/input-output-to-db) directory to load your own input-output table and adjust it to the proper database format.
+More detailed instructions on this will come soon, but you will have to adjust the `main.R` located in the [input-output-to-db](https://github.com/fineprint-global/io-visualization/tree/master/db/input-output-to-db/) directory to load your own input-output table and adjust it to the proper database format.
+
+##### 2.1 Database format
+In order for your input-output table to be used with the Shiny app, you first need to adjust it to the database format used for this application.
+
+The database format can be found in the [db](https://github.com/fineprint-global/io-visualization/tree/master/db/) folder in both `.dbm` format (to be viewed and edited via [pgmodeler](https://pgmodeler.io/)) and `.png` formats.
+
+Please care, the `input-output` table in the database is the **Leontief Inverse** of the input-output table.
+
+Check out the `main.R` file to see how `FABIO` was taken from `.rds` files and modified to fit the database format.
+
+#### 3. Change the visualizations
+The folders to take care of are the [app](https://github.com/fineprint-global/io-visualization/tree/master/app/) folder and the [docker-rshiny](https://github.com/fineprint-global/io-visualization/tree/master/docker-rshiny/) folder. The `app` folder will be used to change the visualizations whereas the `docker-rshiny` folder needs to be kept in mind for any new packages you might require.
+
+##### 3.1 `app` folder
+Before you dive into this, if you are new to RShiny, you may want to check out this [tutorial](https://shiny.rstudio.com/tutorial/).
+
+In our example, the `app` folder is divided into 4 main files:
+
+- `app.R`: you should not need to add anything there, this just brings all three other files together
+- `global.R`: this will be executed once for every worker process, not for every user, so this is where you specify database connections and perform other setup-related tasks
+- `ui.R`: you specify the UI here. `output` elements (e.g. `uiOutput`) are defined here and respective `render` functions (e.g. `renderText`) for those are performed in the `server.R`. If you want to add new visualizations or other elements, define them here.
+- `server.R`: any new visualizations defined in the `ui.R` should be implemented in the `server.R`, this is where you collect your data, bring it into the correct format and then define the output-layout (e.g. for `plotly`).
+
+##### 3.2 `docker-rshiny` folder for packages
+You need to edit the [Dockerfile](https://github.com/fineprint-global/io-visualization/tree/master/docker-rshiny/Dockerfile) if you add any new packages that are not included yet.
+
+As an example, in this part of the Dockerfile …
+```Dockerfile
+...
+# Install a few dependencies for packages
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  && install2.r --error \
+    plotly \
+    RPostgreSQL \
+    pool
+...
+```
+… you could edit it to include `leaflet` to add map functionalities:
+```Dockerfile
+    ...
+    pool \
+    leaflet
+...
+```
 
 ### How to restart or stop the app
 - To restart the containers, run `docker-compose restart`
@@ -88,6 +138,8 @@ More detailed instructions on this will come soon, but you will have to adjust t
 
 ## Troubleshooting
 *This section is still to come.*
+
+- make sure you have all dependencies (packages etc.) installed, you may want to check out the RShiny Dockerfile for any packages necessary for the app to run
 
 ## Acknowledgement
 This project gratefully acknowledges financial support from the ERC as part of the [FINEPRINT](https://www.fineprint.global/) project.
