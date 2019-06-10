@@ -19,6 +19,7 @@ services:
     container_name: ioviz_app
     build:
       context: ./docker-rshiny
+    # image: fineprint/ioviz-rshiny
     restart: always
     ports:
       - ${SHINY_PORT}:80

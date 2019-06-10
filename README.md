@@ -141,5 +141,14 @@ RUN apt-get update \
 
 - make sure you have all dependencies (packages etc.) installed, you may want to check out the RShiny Dockerfile for any packages necessary for the app to run
 
+### Issues with RShiny Docker
+
+In case there are issues with building and running the RShiny Docker from the directory (especially in Windows file permissions tend to get messed up, and then the container is constantly restarting, sometimes with the error: `standard_init_linux.go:207: exec user process caused "no such file or directory"`), you can alternatively use the docker image from Docker Hub. For this, you need to replace the build context with the Docker Hub image like below:
+```YAML
+    # build:
+    #   context: ./docker-rshiny
+	image: fineprint/ioviz-rshiny
+```
+
 ## Acknowledgement
 This project gratefully acknowledges financial support from the ERC as part of the [FINEPRINT](https://www.fineprint.global/) project.
