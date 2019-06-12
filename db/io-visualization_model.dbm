@@ -5,7 +5,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 -->
 <dbmodel pgmodeler-ver="0.9.1" last-position="0,0" last-zoom="0.8"
 	 default-schema="public" default-owner="postgres">
-<database name="new_database" is-template="false" allow-conns="true">
+<database name="io_db" is-template="false" allow-conns="true">
 </database>
 
 <schema name="public" fill-color="#e1e1e1" sql-disabled="true">
@@ -74,6 +74,25 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
+<extension name="postgis">
+	<schema name="public"/>
+</extension>
+
+<table name="region_cluster">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="20" y="960"/>
+	<column name="id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="name" not-null="true">
+		<type name="text" length="0"/>
+	</column>
+	<constraint name="region_cluster_pk" type="pk-constr" table="public.region_cluster">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
 <table name="region">
 	<schema name="public"/>
 	<role name="postgres"/>
@@ -94,32 +113,6 @@ CAUTION: Do not modify this file unless you know what you are doing.
 		<columns names="id" ref-type="src-columns"/>
 	</constraint>
 </table>
-
-<table name="region_cluster">
-	<schema name="public"/>
-	<role name="postgres"/>
-	<position x="20" y="960"/>
-	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
-	</column>
-	<column name="name" not-null="true">
-		<type name="text" length="0"/>
-	</column>
-	<constraint name="region_cluster_pk" type="pk-constr" table="public.region_cluster">
-		<columns names="id" ref-type="src-columns"/>
-	</constraint>
-</table>
-
-<relationship name="many_region_cluster_has_many_region" type="relnn"
-	 src-col-pattern="{sc}_{st}" dst-col-pattern="{sc}_{dt}"
-	 pk-pattern="{gt}_pk" uq-pattern="{gt}_uq"
-	 src-fk-pattern="{st}_fk" dst-fk-pattern="{dt}_fk"
-	 pk-col-pattern="id"
-	 custom-color="#83af1f"
-	 src-table="public.region_cluster"
-	 dst-table="public.region"
-	 src-required="false" dst-required="false"
-	 table-name="many_region_cluster_has_many_region"/>
 
 <table name="region_aggregate">
 	<schema name="public"/>
@@ -277,6 +270,17 @@ or nonfood sector (households, state, etc.)]]></comment>
 	<comment><![CDATA[potentially add total_production]]></comment>
 </textbox>
 
+<relationship name="many_region_cluster_has_many_region" type="relnn"
+	 src-col-pattern="{sc}_{st}" dst-col-pattern="{sc}_{dt}"
+	 pk-pattern="{gt}_pk" uq-pattern="{gt}_uq"
+	 src-fk-pattern="{st}_fk" dst-fk-pattern="{dt}_fk"
+	 pk-col-pattern="id"
+	 custom-color="#83af1f"
+	 src-table="public.region_cluster"
+	 dst-table="public.region"
+	 src-required="false" dst-required="false"
+	 table-name="many_region_cluster_has_many_region"/>
+
 <constraint name="type_fk" type="fk-constr" comparison-type="MATCH FULL"
 	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.type" table="public.element">
 	<columns names="type" ref-type="src-columns"/>
@@ -412,7 +416,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 
 <relationship name="rel_product_product_unit" type="relfk"
 	 src-table="public.product"
-	 dst-table="public.product_unit" reference-fk="product_unit"
+	 dst-table="public.product_unit" reference-fk="product_unit_fk"
 	 src-required="false" dst-required="false">
 	<label ref-type="name-label">
 		<position x="19.9104" y="-25.0266"/>
