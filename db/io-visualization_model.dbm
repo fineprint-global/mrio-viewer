@@ -3,7 +3,7 @@
 CAUTION: Do not modify this file unless you know what you are doing.
          Unexpected results may occur if the code is changed deliberately.
 -->
-<dbmodel pgmodeler-ver="0.9.1" last-position="0,0" last-zoom="0.8"
+<dbmodel pgmodeler-ver="0.9.1" last-position="218,0" last-zoom="0.8"
 	 default-schema="public" default-owner="postgres">
 <database name="io_db" is-template="false" allow-conns="true">
 </database>
@@ -16,7 +16,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="1460" y="600"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="smallserial" length="0"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
@@ -31,7 +31,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="1100" y="640"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="smallserial" length="0"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
@@ -49,7 +49,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="580" y="700"/>
 	<column name="id" not-null="true">
-		<type name="bigint" length="0"/>
+		<type name="bigserial" length="0"/>
 	</column>
 	<column name="from_region" not-null="true">
 		<type name="smallint" length="0"/>
@@ -83,7 +83,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="20" y="960"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="smallserial" length="0"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
@@ -98,7 +98,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="0" y="700"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="smallserial" length="0"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
@@ -132,9 +132,9 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="product_unit">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="1360" y="260"/>
+	<position x="1440" y="120"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="smallserial" length="0"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
@@ -149,12 +149,15 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="1020" y="400"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="smallserial" length="0"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
 	</column>
 	<column name="product_unit" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="product_group">
 		<type name="smallint" length="0"/>
 	</column>
 	<column name="other_id">
@@ -170,7 +173,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="920" y="120"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="smallserial" length="0"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
@@ -185,7 +188,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="480" y="40"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="smallserial" length="0"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
@@ -209,7 +212,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="40" y="60"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="smallserial" length="0"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
@@ -224,7 +227,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<role name="postgres"/>
 	<position x="480" y="340"/>
 	<column name="id" not-null="true">
-		<type name="smallint" length="0"/>
+		<type name="bigserial" length="0"/>
 	</column>
 	<column name="from_region" not-null="true">
 		<type name="smallint" length="0"/>
@@ -247,6 +250,9 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="amount">
 		<type name="bigint" length="0"/>
 	</column>
+	<constraint name="input-output_leontief_pk" type="pk-constr" table="public.&quot;input-output_leontief&quot;">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
 </table>
 
 <textbox name="type_desc" font-size="9">
@@ -256,7 +262,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 
 <textbox name="element" font-size="9">
 	<position x="1100" y="760"/>
-	<comment><![CDATA[food, stockchanges, 
+	<comment><![CDATA[food, stockchanges,
 or nonfood sector (households, state, etc.)]]></comment>
 </textbox>
 
@@ -279,7 +285,32 @@ or nonfood sector (households, state, etc.)]]></comment>
 	 src-table="public.region_cluster"
 	 dst-table="public.region"
 	 src-required="false" dst-required="false"
-	 table-name="many_region_cluster_has_many_region"/>
+	 table-name="many_region_cluster_has_many_region">
+	<label ref-type="src-label">
+		<position x="-7.72331" y="4.85"/>
+	</label>
+	<label ref-type="dst-label">
+		<position x="1.94006" y="7.75"/>
+	</label>
+	<label ref-type="name-label">
+		<position x="0" y="0"/>
+	</label>
+</relationship>
+
+<table name="product_group">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="1180" y="120"/>
+	<column name="id" not-null="true">
+		<type name="smallserial" length="0"/>
+	</column>
+	<column name="name" not-null="true">
+		<type name="text" length="0"/>
+	</column>
+	<constraint name="product_group_pk" type="pk-constr" table="public.product_group">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
 
 <constraint name="type_fk" type="fk-constr" comparison-type="MATCH FULL"
 	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.type" table="public.element">
@@ -326,6 +357,12 @@ or nonfood sector (households, state, etc.)]]></comment>
 <constraint name="product_unit_fk" type="fk-constr" comparison-type="MATCH FULL"
 	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.product_unit" table="public.product">
 	<columns names="product_unit" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="product_group_fk" type="fk-constr" comparison-type="MATCH FULL"
+	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.product_group" table="public.product">
+	<columns names="product_group" ref-type="src-columns"/>
 	<columns names="id" ref-type="dst-columns"/>
 </constraint>
 
@@ -419,7 +456,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	 dst-table="public.product_unit" reference-fk="product_unit_fk"
 	 src-required="false" dst-required="false">
 	<label ref-type="name-label">
-		<position x="19.9104" y="-25.0266"/>
+		<position x="36.0399" y="-35.5266"/>
 	</label>
 </relationship>
 
@@ -456,6 +493,11 @@ or nonfood sector (households, state, etc.)]]></comment>
 <relationship name="&quot;rel_input-output-leontief_allocation&quot;" type="relfk"
 	 src-table="public.&quot;input-output_leontief&quot;"
 	 dst-table="public.allocation" reference-fk="allocation_fk"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_product_product_group" type="relfk"
+	 src-table="public.product"
+	 dst-table="public.product_group" reference-fk="product_group_fk"
 	 src-required="false" dst-required="false"/>
 
 </dbmodel>
