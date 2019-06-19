@@ -41,4 +41,7 @@ rsconnect/
 
 # Ignore files that store confidential information
 .env
-*/.Renviron
+*.Renviron
+
+# Ignore .rds data files
+db/data/*.rds

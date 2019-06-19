@@ -33,6 +33,11 @@ You only need git installed if you want to contribute to the repository or clone
 #### (R and RStudio)
 You only need R (version 3.5 or higher) and RStudio installed in case you would like to make your own changes to the app and try them out before you create the docker containers.
 
+If you are on a Linux machine, you need to install the following packages via `apt` (or any other package manager) as they are required by the R packages needed:
+`sudo apt install libpq-dev libssl-dev libxml2-dev libcurl4-openssl-dev`
+
+The command to install the R packages can be found on the respective file you want to edit.
+
 ### Get the app
 To get the app, you can either
 
@@ -141,7 +146,7 @@ RUN apt-get update \
 
 - make sure you have all dependencies (packages etc.) installed, you may want to check out the RShiny Dockerfile for any packages necessary for the app to run
 
-### Issues with RShiny Docker
+### Windows-Issues with RShiny Docker
 
 In case there are issues with building and running the RShiny Docker from the directory (especially in Windows file permissions tend to get messed up, and then the container is constantly restarting, sometimes with the error: `standard_init_linux.go:207: exec user process caused "no such file or directory"`), you can alternatively use the docker image from Docker Hub. For this, you need to replace the build context with the Docker Hub image like below:
 ```YAML
