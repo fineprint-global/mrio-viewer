@@ -9,8 +9,9 @@
 # 1. Load packages
 # 2. Setup environment variables
 # 3. Create the database connection
-# 4. E.rds - add info about product, region, landuse and biomass
-# 5. Load IO-Leontief, modify it and save it to the database
+# 4. E.rds - add general info about product, region
+# 5. E.rds - add environmental use (landuse and biomass)
+# 6. Load IO-Leontief, modify it and save it to the database
 
 ##################################################################
 ### 1. Load packages
@@ -88,9 +89,9 @@ db <-DBI::dbConnect(drv = RPostgres::Postgres(),
 # disconnect AFTER all database operations are done
 # DBI::dbDisconnect(db)
 
-##################################################################
-### 4. E.rds - add info about product, region, landuse and biomass
-##################################################################
+##########################################################################
+### 4. E.rds - add general info about product, region, landuse and biomass
+##########################################################################
 
 year <- 2013
 data <- read_file_function(sprintf(file_format, year, "E"))
@@ -108,6 +109,9 @@ DBI::dbAppendTable(db, name = "region", value = insert_data)
 rm(insert_data)
 
 region <- RPostgres::dbReadTable(db, "region")
+
+# NOTE: this would also be one potential place to populate
+#       region_aggregate or region_cluster
 
 # product_group table --------------------------------------------------
 insert_data <- data.frame(
@@ -149,8 +153,75 @@ rm(insert_data)
 
 product <- RPostgres::dbReadTable(db, "product")
 
+# env_factor_unit table --------------------------------------------------
+insert_data <- data.frame(
+  name = c("ha", "tonnes") # ha for landuse, tonnes for biomass
+)
+
+DBI::dbAppendTable(db, name = "env_factor_unit", value = insert_data)
+
+rm(insert_data)
+
+env_factor_unit <- RPostgres::dbReadTable(db, "env_factor_unit")
+
+# env_factor table --------------------------------------------------
+insert_data <- data.frame(
+  name = c("landuse", "biomass"),
+  env_factor_unit = env_factor_unit$id
+)
+
+DBI::dbAppendTable(db, name = "env_factor", value = insert_data)
+
+rm(insert_data)
+
+env_factor <- RPostgres::dbReadTable(db, "env_factor")
+
+##########################################################################
+### 5. E.rds - add environmental use (landuse and biomass)
+##########################################################################
+
+# for(year in year_range){
+year <- 2013 # temporarily just 2013
+data <- read_file_function(sprintf(file_format, year, "E"))
+
+# get environmental use variables - make sure they match the format used in your data
+env_factor$name_data <- paste0(toupper(substr(env_factor$name, 1, 1)), 
+                               substr(env_factor$name, 2, nchar(env_factor$name)))
+
+# prepare environmental data -> unselect unnecessary cols, add ids for region and product
+env_data <- data %>%
+  dplyr::select(-Country.Code, -Item.Code, -Com.Code, -Group, -ID) %>% 
+  # REGION: join table, add ID, remove unnecessary cols
+  dplyr::left_join(region, by = c("Country" = "name"), suffix = c("", ".region")) %>% 
+  dplyr::rename("from_region" = "id") %>%  
+  dplyr::select(-Country, -iso3, -geometry) %>% 
+  # PRODUCT: join table, add ID, remove unnecessary cols
+  dplyr::left_join(product, by = c("Item" = "name"), suffix = c("", ".product")) %>% 
+  dplyr::rename("from_product" = "id") %>% 
+  dplyr::select(-Item, -product_unit, -product_group, -other_id) %>% 
+  # add the year
+  dplyr::mutate(year = year)
+
+# loop through env_use_vars
+for(i in length(row.names(env_factor))){
+  insert_data <- env_data %>%  
+    dplyr::mutate(env_factor = env_factor[i,]$id) %>% 
+    dplyr::rename("amount" = env_factor[i,]$name_data) %>%
+    dplyr::select(from_region, from_product, env_factor, year, amount)
+  
+  # append env_use with the amount for the environmental factor currently in loop
+  DBI::dbAppendTable(db, name = "env_use", value = insert_data)
+}
+
+rm(env_data)
+rm(insert_data)
+
+env_use <- RPostgres::dbReadTable(db, "env_use")
+
+# }
+
 ##################################################################
-### 5. Load IO-Leontief, modify it and save it to the database
+### 6. Load IO-Leontief, modify it and save it to the database
 ##################################################################
 
 # for(year in year_range){
