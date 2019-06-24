@@ -27,8 +27,8 @@ library(tidyverse)
 ##################################################################
 
 # save the folder path
-# folder_path <- "/mnt/nfs_fineprint/tmp/fabio/"
-folder_path <- "db/data/" # temporarily using the data folder
+folder_path <- "/mnt/nfs_fineprint/tmp/fabio/"
+# folder_path <- "db/data/" # temporarily using the data folder
 
 ## FILE TYPE
 file_type <- "rds"
@@ -68,7 +68,8 @@ allocation_type <- c("mass", "price") # this is needed to read files in our case
 
 file_names <- data.frame(
   io_leontief = c(paste0("L_", allocation_type)),
-  final_demand = "Y" #,
+  final_demand = "Y",
+  E = "E"
 )
 
 ## Other crucial information
@@ -94,14 +95,31 @@ db <-DBI::dbConnect(drv = RPostgres::Postgres(),
 ##########################################################################
 
 year <- 2013
-data <- read_file_function(sprintf(file_format, year, "E"))
+data <- read_file_function(sprintf(file_format, year, file_names$E[1]))
+
+# refactor data$Country to match the order in the data
+data$Country <- factor(data$Country, levels = unique(data$Country))
 
 # region table --------------------------------------------------
+
+## 1. read the country codes from the final demand file
+tmp <- read_file_function(sprintf(file_format, year, file_names$final_demand[1]))
+
+# change the data format from 192*4 columns to 2 columns and more rows
+tmp_gathered <- tmp %>%
+  as_tibble() %>% 
+  gather(key = "REG_element", value = "amount")
+
+country_codes <- unique(substr(tmp_gathered$REG_element, 1, 3)) # %>% 
+  # enframe(name = NULL)
+
+## 2. insert the actual data into the database
 insert_data <- data.frame(
   name = levels(data$Country),
-  iso3 = countrycode::countrycode(sourcevar = levels(data$Country),
-                                  origin = "country.name",
-                                  destination = "iso3c") # get the iso3 code for the country
+  iso3 = country_codes # TODO: ROW is not an ISO3 code, so probably add a column for other_code
+    # countrycode::countrycode(sourcevar = levels(data$Country),
+    #                               origin = "country.name",
+    #                               destination = "iso3c") # get the iso3 code for the country
 )
 
 DBI::dbAppendTable(db, name = "region", value = insert_data)
@@ -115,7 +133,7 @@ region <- RPostgres::dbReadTable(db, "region")
 
 # product_group table --------------------------------------------------
 insert_data <- data.frame(
-  name = levels(data$Group)
+  name = unique(data$Group)
 )
 
 DBI::dbAppendTable(db, name = "product_group", value = insert_data)
@@ -144,8 +162,8 @@ insert_data <- data[!duplicated(data$Item),] %>% # get all products that are not
   # if product_group contains "Lifestock", we use unit-id 2 for "heads", otherwise "tonnes"
   dplyr::mutate(product_unit = ifelse(grepl("Livestock", as.character(product_group)), 2, 1)) %>% # TODO: check with Martin, if only Livestock or also Livestock products are counted in head
   # we can access the group id via as.numeric as we passed on the levels of the factor to the database
-  dplyr::mutate(product_group = as.numeric(product_group)) %>% 
-  dplyr::arrange(name) # arrange by factor "name"
+  dplyr::mutate(product_group = as.numeric(product_group))
+  # note: we do not arrange the products by name here, because otherwise we would not match the order in Y.rds or any other files
 
 DBI::dbAppendTable(db, name = "product", value = insert_data)
 
@@ -180,45 +198,139 @@ env_factor <- RPostgres::dbReadTable(db, "env_factor")
 ### 5. E.rds - add environmental use (landuse and biomass)
 ##########################################################################
 
+# start <- Sys.time()
+# 
 # for(year in year_range){
-year <- 2013 # temporarily just 2013
-data <- read_file_function(sprintf(file_format, year, "E"))
+#   # year <- 2013 # temporarily just 2013
+#   data <- read_file_function(sprintf(file_format, year, "E"))
+# 
+#   # get environmental use variables - make sure they match the format used in your data
+#   env_factor$name_data <- paste0(toupper(substr(env_factor$name, 1, 1)),
+#                                  substr(env_factor$name, 2, nchar(env_factor$name)))
+# 
+#   # prepare environmental data -> unselect unnecessary cols, add ids for region and product
+#   env_data <- data %>%
+#     dplyr::select(-Country.Code, -Item.Code, -Com.Code, -Group, -ID) %>%
+#     # REGION: join table, add ID, remove unnecessary cols
+#     dplyr::left_join(region, by = c("Country" = "name"), suffix = c("", ".region")) %>%
+#     dplyr::rename("from_region" = "id") %>%
+#     dplyr::select(-Country, -iso3, -geometry) %>%
+#     # PRODUCT: join table, add ID, remove unnecessary cols
+#     dplyr::left_join(product, by = c("Item" = "name"), suffix = c("", ".product")) %>%
+#     dplyr::rename("from_product" = "id") %>%
+#     dplyr::select(-Item, -product_unit, -product_group, -other_id) %>%
+#     # add the year
+#     dplyr::mutate(year = year)
+# 
+#   # loop through env_use_vars, for us this is landuse and biomass
+#   for(i in length(row.names(env_factor))){
+#     insert_data <- env_data %>%
+#       dplyr::mutate(env_factor = env_factor[i,]$id) %>%
+#       dplyr::rename("amount" = env_factor[i,]$name_data) %>%
+#       dplyr::select(from_region, from_product, env_factor, year, amount)
+# 
+#     # append env_use with the amount for the environmental factor currently in loop
+#     RPostgres::dbAppendTable(db, name = "env_use", value = insert_data)
+#   }
+# 
+#   rm(data, env_data, insert_data)
+# 
+#   print(paste("Year", year, "/", year_range[length(year_range)]))
+# }
+# 
+# print("5. Populating env_use took")
+# print(Sys.time()-start)
+# # Time difference of 28.80357 mins
+# 
+# # env_use <- RPostgres::dbReadTable(db, "env_use")
 
-# get environmental use variables - make sure they match the format used in your data
-env_factor$name_data <- paste0(toupper(substr(env_factor$name, 1, 1)), 
-                               substr(env_factor$name, 2, nchar(env_factor$name)))
+##################################################################
+### 6. Y.rds - final demand
+##################################################################
 
-# prepare environmental data -> unselect unnecessary cols, add ids for region and product
-env_data <- data %>%
-  dplyr::select(-Country.Code, -Item.Code, -Com.Code, -Group, -ID) %>% 
-  # REGION: join table, add ID, remove unnecessary cols
-  dplyr::left_join(region, by = c("Country" = "name"), suffix = c("", ".region")) %>% 
-  dplyr::rename("from_region" = "id") %>%  
-  dplyr::select(-Country, -iso3, -geometry) %>% 
-  # PRODUCT: join table, add ID, remove unnecessary cols
-  dplyr::left_join(product, by = c("Item" = "name"), suffix = c("", ".product")) %>% 
-  dplyr::rename("from_product" = "id") %>% 
-  dplyr::select(-Item, -product_unit, -product_group, -other_id) %>% 
-  # add the year
-  dplyr::mutate(year = year)
+# --------------------------------------------------------------
+# preparation --------------------------------------------------
+# --------------------------------------------------------------
 
-# loop through env_use_vars
-for(i in length(row.names(env_factor))){
-  insert_data <- env_data %>%  
-    dplyr::mutate(env_factor = env_factor[i,]$id) %>% 
-    dplyr::rename("amount" = env_factor[i,]$name_data) %>%
-    dplyr::select(from_region, from_product, env_factor, year, amount)
-  
-  # append env_use with the amount for the environmental factor currently in loop
-  DBI::dbAppendTable(db, name = "env_use", value = insert_data)
-}
+y_info <- data.frame(
+  element = c("Food", "OtherUses", "StockVariation", "Balancing"),
+  type = c("Food", "Nonfood", "Food", "Food")
+)
 
-rm(env_data)
+# type table --------------------------------------------------
+insert_data <- data.frame(
+  name = unique(y_info$type)
+)
+
+DBI::dbAppendTable(db, name = "type", value = insert_data)
+
 rm(insert_data)
 
-env_use <- RPostgres::dbReadTable(db, "env_use")
+type <- RPostgres::dbReadTable(db, "type")
+
+y_info <- y_info %>% 
+  dplyr::left_join(type, by = c("type" = "name")) %>% 
+  dplyr::rename("type_name" = "type", "type" = "id")
+
+# element table --------------------------------------------------
+insert_data <- data.frame(
+  name = y_info$element,
+  type = y_info$type
+)
+
+DBI::dbAppendTable(db, name = "element", value = insert_data)
+
+rm(insert_data)
+
+element <- RPostgres::dbReadTable(db, "element")
+
+for(t in nrow(type)){ # allocation type
+
+# for(year in year_range){
+year <- 2013 # temporarily just 2013
+
+# TODO: second loop for different allocation types
+data <- read_file_function(sprintf(file_format, year, file_names$final_demand[1]))
+
+# change the data format from 192*4 columns to 2 columns and more rows
+# to easier get it into the database
+insert_data <- data %>%
+  as_tibble() %>% # as_tibble is needed because gather needs it
+  gather(key = "REG_element", value = "amount") %>% 
+  # care: gather works column-wise, meaning our order is now different
+  # it starts with the first region and element for every product
+  # (e.g. ARM_Food*130, then ARM_OtherUses*130) etc
+  dplyr::mutate(iso3 = substr(REG_element, 1, 3)) %>% # get region code 
+  dplyr::mutate(element = substr(REG_element, 5, nchar(REG_element))) %>% # get element name
+  dplyr::select(-REG_element) %>%
+  # join region
+  dplyr::left_join(region, by = c("iso3")) %>% 
+  dplyr::select(-name, -iso3, -geometry) %>% 
+  dplyr::rename("from_region" = "id") %>% 
+  # join element
+  dplyr::left_join(element, by = c("element" = "name")) %>% 
+  dplyr::select(-element, -type) %>% 
+  dplyr::rename("element" = "id") %>% 
+  dplyr::mutate(year = year) %>%
+  dplyr::mutate(to_region = rep(region$id, each = 130, times = 4*192)) %>% # each for 130 products, 4 elem * 192 countries
+  dplyr::mutate(product = rep(product$id, times = 4*192^2)) %>% # 4 elements * 192 countries * 192 countries
+  dplyr::select(from_region, to_region, product, element, year, amount)
+
+start <- Sys.time()
+RPostgres::dbAppendTable(db, name = "final_demand", value = insert_data)
+print(Sys.time()-start)
+# Time difference of 13.09839 hours
+
+start <- Sys.time()
+y_data <- RPostgres::dbReadTable(db, "final_demand")
+print(Sys.time()-start)
+# Time difference of 39.64467 secs
 
 # }
+
+rm(insert_data)
+
+}
 
 ##################################################################
 ### 6. Load IO-Leontief, modify it and save it to the database
