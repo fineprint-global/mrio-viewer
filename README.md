@@ -1,7 +1,7 @@
 # io-visualization
 A set of tools that allow for interactive visualization of input-output tables.
 
-The purpose of this project is to provide an interactive web visualization for input-output tables using R and PostgreSQL. As of right now there are two components, an R Shiny web application and a PostgreSQL Database (more specifically a postgis one). The network of those two components can be created with one single docker-compose command.
+The purpose of this project is to provide an interactive web visualization for input-output tables using R and PostgreSQL. As of right now there are two components, an R Shiny web application and a PostgreSQL Database (more specifically a postgis one). The network of those two components can be created with one single `docker-compose` command.
 
 **Disclaimer:** This app is work in progress and has not been completed. This means that while you can still use certain parts, the app as a whole will not work.
 
@@ -68,7 +68,7 @@ db_password=secret
 ```
 
 ### How to run
-There are two ways to run this app.
+There are three ways to run this app.
 
 1. You can run it as is, with FABIO pre-loaded into the database.
 2. You can use your own input-output table, which requires you to adapt the scripts in the [input-output-to-db](https://github.com/fineprint-global/io-visualization/tree/master/db/input-output-to-db) directory.
@@ -79,7 +79,7 @@ There are two ways to run this app.
 1. Make sure all necessary dependencies are installed.
 2. Make sure Docker (Desktop) is up and running.
 3. Make sure you completed the steps in [setup](#setup)
-4. Navigate to the root directory (io-visualization) with a shell of your choice and run the following command:
+4. Navigate to the root directory (`io-visualization`) with a shell of your choice and run the following command:
 `docker-compose up -d`
 
 Now both, the `ioviz_app` (RShiny app) and the `ioviz_db` (postgis database) should be running on ports specified in the `docker-compose.yml` on your localhost (e.g. ports `80` and `5454` respectively). To verify that both containers are running and the ports are correct, you can run `docker-compose ps` (in the root directory) or `docker ps` (anywhere).
@@ -152,7 +152,7 @@ In case there are issues with building and running the RShiny Docker from the di
 ```YAML
     # build:
     #   context: ./docker-rshiny
-	image: fineprint/ioviz-rshiny
+    image: fineprint/ioviz-rshiny
 ```
 
 ## Acknowledgement
