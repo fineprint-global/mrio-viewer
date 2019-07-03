@@ -1,0 +1,10 @@
+---
+title: "Notes"
+output: html_notebook
+---
+
+To run parts of the code externally in the terminal:
+
+1. move the code to a dedicated `.R` script
+2. run `R CMD BATCH myScript.R &`
+3. run `tail -f myScript.Rout` to see any outputs
