@@ -1,1 +1,6 @@
 /* Defines styles used in the shiny app. */
+
+#sankey_plot {
+  height:calc(100vh - 190px) !important;
+  /* nav: 60+21; rest: 102 */
+}
