@@ -12,9 +12,10 @@
 # 4. E.rds - add general info about product, region
 # 5. E.rds - add environmental use (landuse and biomass)
 # 6. Y.rds - add final demand
-# 7. Load IO-Leontief, modify it and save it to the database
+# 7. X.rds - add total production as environmental use
+# 8. L.rds - add input-output leontief
 
-setwd("db/input-output-to-db")
+# setwd("db/input-output-to-db")
 
 ##########################################################################
 ### 01-03_setup.r
@@ -44,15 +45,16 @@ source("05_env-use.R")
 source("06_final-demand.R")
 
 ##################################################################
-### 7. Load IO-Leontief, modify it and save it to the database
+### 7. X.rds - add total production as environmental use
 ##################################################################
 
-# for(year in year_range){
-year <- 2013 # temporarily just 2013
-
-# TODO: second loop for different allocation types
-data <- read_file_function(sprintf(file_format, year, file_names$io_leontief[1]))
-
-# }
 
 
+##################################################################
+### 8. L.rds - add input-output leontief
+##################################################################
+
+source("08_input-output.R")
+
+# finally, disconnect the DB
+DBI::dbDisconnect(db)
