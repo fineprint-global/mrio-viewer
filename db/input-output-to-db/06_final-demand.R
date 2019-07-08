@@ -2,6 +2,8 @@
 ### 6. Y.rds - add final demand
 ##################################################################
 
+print("06_final-demand.R")
+
 # --------------------------------------------------------------
 # preparation --------------------------------------------------
 # --------------------------------------------------------------
@@ -12,38 +14,72 @@ y_info <- data.frame(
 )
 
 # type table --------------------------------------------------
-insert_data <- data.frame(
-  name = unique(y_info$type)
-)
-
-DBI::dbAppendTable(db, name = "type", value = insert_data)
-
-rm(insert_data)
-
 type <- RPostgres::dbReadTable(db, "type")
+
+if(nrow(type) == 0){
+  
+  insert_data <- data.frame(
+    name = unique(y_info$type)
+  )
+  
+  DBI::dbAppendTable(db, name = "type", value = insert_data)
+  
+  rm(insert_data)
+
+  type <- RPostgres::dbReadTable(db, "type")
+}
 
 y_info <- y_info %>% 
   dplyr::left_join(type, by = c("type" = "name")) %>% 
   dplyr::rename("type_name" = "type", "type" = "id")
 
 # element table --------------------------------------------------
-insert_data <- data.frame(
-  name = y_info$element,
-  type = y_info$type
-)
-
-DBI::dbAppendTable(db, name = "element", value = insert_data)
-
-rm(insert_data)
-
 element <- RPostgres::dbReadTable(db, "element")
 
-for(t in nrow(type)){ # allocation type
+if(nrow(element) == 0){
+    
+  insert_data <- data.frame(
+    name = y_info$element,
+    type = y_info$type
+  )
   
-  # for(year in year_range){
-  year <- 2013 # temporarily just 2013
+  DBI::dbAppendTable(db, name = "element", value = insert_data)
   
-  # TODO: second loop for different allocation types
+  rm(insert_data)
+  
+  element <- RPostgres::dbReadTable(db, "element")
+}
+
+# other tables ---------------------------------------------------
+product <- RPostgres::dbReadTable(db, "product")
+region <- RPostgres::dbReadTable(db, "region")
+
+# ----------------------------------------------------------------
+# check years ----------------------------------------------------
+# ----------------------------------------------------------------
+
+# Check for which years we already have data for
+# care: in case you stopped an operation to the db or changed the original data
+# you should remove the data from the db before any other operations.
+year_range <- c(2013:1986)
+# get all years from the db
+query <- sprintf('SELECT DISTINCT year FROM "%s";', 
+                 "final_demand")
+result <- RPostgres::dbGetQuery(db, query)$year
+# get all years that are NOT in the db
+year_range <- year_range[!(year_range %in% result)]
+
+rm(query, result)
+
+# ----------------------------------------------------------------
+# get data and insert --------------------------------------------
+# ----------------------------------------------------------------
+
+for(year in year_range){
+  # year <- 2013 # temporarily just 2013
+  
+  print(paste("Year", year, "/", year_range[length(year_range)]))
+  
   data <- read_file_function(sprintf(file_format, year, file_names$final_demand[1]))
   
   # change the data format from 192*4 columns to 2 columns and more rows
@@ -68,20 +104,24 @@ for(t in nrow(type)){ # allocation type
     dplyr::mutate(year = year) %>%
     dplyr::mutate(to_region = rep(region$id, each = 130, times = 4*192)) %>% # each for 130 products, 4 elem * 192 countries
     dplyr::mutate(product = rep(product$id, times = 4*192^2)) %>% # 4 elements * 192 countries * 192 countries
-    dplyr::select(from_region, to_region, product, element, year, amount)
+    dplyr::select(from_region, to_region, product, element, year, amount) %>% 
+    dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) # filter the amount
+  
+  rm(data)
   
   start <- Sys.time()
   RPostgres::dbAppendTable(db, name = "final_demand", value = insert_data)
   print(Sys.time()-start)
   # Time difference of 13.09839 hours
   
-  start <- Sys.time()
-  y_data <- RPostgres::dbReadTable(db, "final_demand")
-  print(Sys.time()-start)
-  # Time difference of 39.64467 secs
-  
-  # }
-  
   rm(insert_data)
-  
+  gc()
 }
+
+start <- Sys.time()
+y_data <- RPostgres::dbReadTable(db, "final_demand")
+print(Sys.time()-start)
+# Time difference of 39.64467 secs
+
+rm(insert_data)
+

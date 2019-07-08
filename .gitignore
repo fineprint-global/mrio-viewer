@@ -36,6 +36,9 @@ README.html
 *.knit.md
 *.nb.html
 
+# Other temporary files
+*.Rout
+
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
 .Rproj.user

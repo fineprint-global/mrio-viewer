@@ -54,7 +54,8 @@ allocation_type <- c("mass", "price") # this is needed to read files in our case
 file_names <- data.frame(
   io_leontief = c(paste0("L_", allocation_type)),
   final_demand = "Y",
-  E = "E"
+  E = "E",
+  X = "X"
 )
 
 ## Other crucial information
@@ -63,6 +64,12 @@ year_range <- c(1986:2013)
 ##################################################################
 ### 3. Create the database connection
 ##################################################################
+
+# check if there is a valid connection already
+# to close it before creating a new one
+if(exists("db") && RPostgres::dbIsValid(db)){
+  DBI::dbDisconnect(db)
+}
 
 # connect to the database
 db <-DBI::dbConnect(drv = RPostgres::Postgres(),
