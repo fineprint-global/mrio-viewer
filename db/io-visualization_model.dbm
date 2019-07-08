@@ -5,7 +5,15 @@ CAUTION: Do not modify this file unless you know what you are doing.
 -->
 <dbmodel pgmodeler-ver="0.9.1" last-position="0,0" last-zoom="0.65"
 	 default-schema="public" default-owner="postgres">
-<database name="io_db" is-template="false" allow-conns="true">
+<role name="app"
+      login="true"
+      encrypted="true"
+      password="diehiemiGiuk7mai">
+</role>
+
+<database name="io_db" is-template="false" allow-conns="true" append-at-eod="true">
+	<appended-sql><![CDATA[GRANT CONNECT ON DATABASE io_db TO app;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 </database>
 
 <schema name="public" fill-color="#e1e1e1" sql-disabled="true">
@@ -301,7 +309,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	</constraint>
 </table>
 
-<table name="env_use">
+<table name="env_intensity">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="20" y="120"/>
@@ -321,9 +329,9 @@ or nonfood sector (households, state, etc.)]]></comment>
 		<type name="smallint" length="0"/>
 	</column>
 	<column name="amount">
-		<type name="decimal" length="20" precision="2"/>
+		<type name="decimal" length="26" precision="8"/>
 	</column>
-	<constraint name="env_use_pk" type="pk-constr" table="public.env_use">
+	<constraint name="env_intensity_pk" type="pk-constr" table="public.env_intensity">
 		<columns names="id" ref-type="src-columns"/>
 	</constraint>
 </table>
@@ -419,19 +427,19 @@ or nonfood sector (households, state, etc.)]]></comment>
 </constraint>
 
 <constraint name="from_region_fk" type="fk-constr" comparison-type="MATCH FULL"
-	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.region" table="public.env_use">
+	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.region" table="public.env_intensity">
 	<columns names="from_region" ref-type="src-columns"/>
 	<columns names="id" ref-type="dst-columns"/>
 </constraint>
 
 <constraint name="from_product_fk" type="fk-constr" comparison-type="MATCH FULL"
-	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.product" table="public.env_use">
+	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.product" table="public.env_intensity">
 	<columns names="from_product" ref-type="src-columns"/>
 	<columns names="id" ref-type="dst-columns"/>
 </constraint>
 
 <constraint name="env_factor_fk" type="fk-constr" comparison-type="MATCH FULL"
-	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.env_factor" table="public.env_use">
+	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.env_factor" table="public.env_intensity">
 	<columns names="env_factor" ref-type="src-columns"/>
 	<columns names="id" ref-type="dst-columns"/>
 </constraint>
@@ -535,12 +543,12 @@ or nonfood sector (households, state, etc.)]]></comment>
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_total_production_region" type="relfk"
-	 src-table="public.env_use"
+	 src-table="public.env_intensity"
 	 dst-table="public.region" reference-fk="from_region_fk"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_total_production_product" type="relfk"
-	 src-table="public.env_use"
+	 src-table="public.env_intensity"
 	 dst-table="public.product" reference-fk="from_product_fk"
 	 src-required="false" dst-required="false">
 	<label ref-type="name-label">
@@ -549,7 +557,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 </relationship>
 
 <relationship name="rel_env_use_env_factor" type="relfk"
-	 src-table="public.env_use"
+	 src-table="public.env_intensity"
 	 dst-table="public.env_factor" reference-fk="env_factor_fk"
 	 src-required="false" dst-required="false"/>
 
