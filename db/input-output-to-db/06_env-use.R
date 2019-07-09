@@ -63,11 +63,39 @@ for(year in year_range){
     # add the year
     dplyr::mutate(year = year)
 
+  rm(data)
+  
+  # get total production data
+  tp_data <- read_file_function(sprintf(file_format, year, file_names$X[1]))
+  # the order of products and countries is here:
+  # country 1 with total production for products from 1:130 (1 to 130)
+  # country 2 with total production for products from 1:130 (1.1 to 130.1)
+  # ...
+  # country 192 with total production for products from 1:130 (1.191 to 130.191)
+  
+  total_production <- tp_data %>% 
+    enframe(name = NULL) %>% # "product.country"
+    #  as_tibble() %>% 
+    # dplyr::mutate(year = year) %>%
+    dplyr::mutate(from_region = rep(region$id, each = 130)) %>% # each for 130 products, 4 elem * 192 countries
+    dplyr::mutate(from_product = rep(product$id, times = 192)) # 4 elements * 192 countries * 192 countries
+  
+  rm(tp_data)
+  
+  data <- env_data %>% 
+    dplyr::left_join(total_production, by = c("from_region" = "from_region", 
+                                              "from_product" = "from_product")) %>% 
+    dplyr::mutate(total_production = value)
+  
+  rm(total_production)
+  
   # loop through env_use_vars, for us this is landuse and biomass
   for(i in length(row.names(env_factor))){
-    insert_data <- env_data %>%
+    insert_data <- data %>%
       dplyr::mutate(env_factor = env_factor[i,]$id) %>%
       dplyr::rename("amount" = env_factor[i,]$name_data) %>%
+      # now we create amount as an environmental pressure by dividing it by total_production
+      dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
       dplyr::select(from_region, from_product, env_factor, year, amount)
 
     # append env_use with the amount for the environmental factor currently in loop

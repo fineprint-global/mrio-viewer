@@ -1,5 +1,5 @@
 ##################################################################
-### 8. L.rds - add input-output leontief
+### 7. L.rds - add input-output leontief
 ##################################################################
 
 # # if run as standalone, run:

@@ -113,8 +113,9 @@ env_factor_unit <- RPostgres::dbReadTable(db, "env_factor_unit")
 
 if(nrow(env_factor_unit) == 0){
     
+  # TODO: ha/tonnes, tonnes/tonnes --> X.rds durch total prod of this year
   insert_data <- data.frame(
-    name = c("ha", "tonnes") #, "NA") # ha for landuse, tonnes for biomass
+    name = c("ha", "tonnes") # ha for landuse, tonnes for biomass
   )
   
   DBI::dbAppendTable(db, name = "env_factor_unit", value = insert_data)
@@ -123,14 +124,14 @@ if(nrow(env_factor_unit) == 0){
   
   env_factor_unit <- RPostgres::dbReadTable(db, "env_factor_unit")
 }
-  
+
 # env_factor table --------------------------------------------------
 env_factor <- RPostgres::dbReadTable(db, "env_factor")
 
 if(nrow(env_factor) == 0){
-    
+  
   insert_data <- data.frame(
-    name = c("landuse", "biomass"), #, "total production"),
+    name = c("landuse", "biomass"),
     env_factor_unit = env_factor_unit$id
   )
   

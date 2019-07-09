@@ -55,7 +55,8 @@ file_names <- data.frame(
   io_leontief = c(paste0("L_", allocation_type)),
   final_demand = "Y",
   E = "E",
-  X = "X"
+  X = "X",
+  B = c(paste0("B_inv_", allocation_type))
 )
 
 ## Other crucial information
