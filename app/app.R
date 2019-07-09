@@ -4,6 +4,8 @@
 # 2. source ui and server
 # 3. start the shiny app
 
+setwd("app")
+
 ### 1. source global.R
 source("./global.R")
 

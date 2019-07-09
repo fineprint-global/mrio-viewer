@@ -1,0 +1,201 @@
+Code;Item
+p01.a;Paddy rice
+p01.b;Wheat
+p01.c;Cereal grains nec
+p01.d;Vegetables, fruit, nuts
+p01.e;Oil seeds
+p01.f;Sugar cane, sugar beet
+p01.g;Plant-based fibers
+p01.h;Crops nec
+p01.i;Cattle
+p01.j;Pigs
+p01.k;Poultry
+p01.l;Meat animals nec
+p01.m;Animal products nec
+p01.n;Raw milk
+p01.o;Wool, silk-worm cocoons
+p01.w.1;Manure (conventional treatment)
+p01.w.2;Manure (biogas treatment)
+p02;Products of forestry, logging and related services
+p05;"Fish and other fishing products; services incidental of fishing"
+p10.a;Anthracite
+p10.b;Coking Coal
+p10.c;Other Bituminous Coal
+p10.d;Sub-Bituminous Coal
+p10.e;Patent Fuel
+p10.f;Lignite/Brown Coal
+p10.g;BKB/Peat Briquettes
+p10.h;Peat
+p11.a;Crude petroleum and services related to crude oil extraction, excluding surveying
+p11.b;Natural gas and services related to natural gas extraction, excluding surveying
+p11.b.1;Natural Gas Liquids
+p11.c;Other Hydrocarbons
+p12;Uranium and thorium ores
+p13.1;Iron ores
+p13.20.11;Copper ores and concentrates
+p13.20.12;Nickel ores and concentrates
+p13.20.13;Aluminium ores and concentrates
+p13.20.14;Precious metal ores and concentrates
+p13.20.15;Lead, zinc and tin ores and concentrates
+p13.20.16;Other non-ferrous metal ores and concentrates
+p14.1;Stone
+p14.2;Sand and clay
+p14.3;Chemical and fertilizer minerals, salt and other mining and quarrying products n.e.c.
+p15.a;Products of meat cattle
+p15.b;Products of meat pigs
+p15.c;Products of meat poultry
+p15.d;Meat products nec
+p15.e;products of Vegetable oils and fats
+p15.f;Dairy products
+p15.g;Processed rice
+p15.h;Sugar
+p15.i;Food products nec
+p15.j;Beverages
+p15.k;Fish products
+p16;Tobacco products
+p17;Textiles
+p18;"Wearing apparel; furs"
+p19;Leather and leather products
+p20;"Wood and products of wood and cork (except furniture); articles of straw and plaiting materials"
+p20.w;Wood material for treatment, Re-processing of secondary wood material into new wood material
+p21.1;Pulp
+p21.w.1;Secondary paper for treatment, Re-processing of secondary paper into new pulp
+p21.2;Paper and paper products
+p22;Printed matter and recorded media
+p23.1.a;Coke Oven Coke
+p23.1.b;Gas Coke
+p23.1.c;Coal Tar
+p23.20.a;Motor Gasoline
+p23.20.b;Aviation Gasoline
+p23.20.c;Gasoline Type Jet Fuel
+p23.20.d;Kerosene Type Jet Fuel
+p23.20.e;Kerosene
+p23.20.f;Gas/Diesel Oil
+p23.20.g;Heavy Fuel Oil
+p23.20.h;Refinery Gas
+p23.20.i;Liquefied Petroleum Gases (LPG)
+p23.20.j;Refinery Feedstocks
+p23.20.k;Ethane
+p23.20.l;Naphtha
+p23.20.m;White Spirit & SBP
+p23.20.n;Lubricants
+p23.20.o;Bitumen
+p23.20.p;Paraffin Waxes
+p23.20.q;Petroleum Coke
+p23.20.r;Non-specified Petroleum Products
+p23.3;Nuclear fuel
+p24.a;Plastics, basic
+p24.a.w;Secondary plastic for treatment, Re-processing of secondary plastic into new plastic
+p24.b;N-fertiliser
+p24.c;P- and other fertiliser
+p24.d;Chemicals nec
+p24.e;Charcoal
+p24.f;Additives/Blending Components
+p24.g;Biogasoline
+p24.h;Biodiesels
+p24.i;Other Liquid Biofuels
+p25;Rubber and plastic products
+p26.a;Glass and glass products
+p26.a.w;Secondary glass for treatment, Re-processing of secondary glass into new glass
+p26.b;Ceramic goods
+p26.c;Bricks, tiles and construction products, in baked clay
+p26.d;Cement, lime and plaster
+p26.d.w;Ash for treatment, Re-processing of ash into clinker
+p26.e;Other non-metallic mineral products
+p27.a;Basic iron and steel and of ferro-alloys and first products thereof
+p27.a.w;Secondary steel for treatment, Re-processing of secondary steel into new steel
+p27.41;Precious metals
+p27.41.w;Secondary preciuos metals for treatment, Re-processing of secondary preciuos metals into new preciuos metals
+p27.42;Aluminium and aluminium products
+p27.42.w;Secondary aluminium for treatment, Re-processing of secondary aluminium into new aluminium
+p27.43;Lead, zinc and tin and products thereof
+p27.43.w;Secondary lead for treatment, Re-processing of secondary lead into new lead
+p27.44;Copper products
+p27.44.w;Secondary copper for treatment, Re-processing of secondary copper into new copper
+p27.45;Other non-ferrous metal products
+p27.45.w;Secondary other non-ferrous metals for treatment, Re-processing of secondary other non-ferrous metals into new other non-ferrous metals
+p27.5;Foundry work services
+p28;Fabricated metal products, except machinery and equipment
+p29;Machinery and equipment n.e.c.
+p30;Office machinery and computers
+p31;Electrical machinery and apparatus n.e.c.
+p32;Radio, television and communication equipment and apparatus
+p33;Medical, precision and optical instruments, watches and clocks
+p34;Motor vehicles, trailers and semi-trailers
+p35;Other transport equipment
+p36;"Furniture; other manufactured goods n.e.c."
+p37;Secondary raw materials
+p37.w.1;Bottles for treatment, Recycling of bottles by direct reuse
+p40.11.a;Electricity by coal
+p40.11.b;Electricity by gas
+p40.11.c;Electricity by nuclear
+p40.11.d;Electricity by hydro
+p40.11.e;Electricity by wind
+p40.11.f;Electricity by petroleum and other oil derivatives
+p40.11.g;Electricity by biomass and waste
+p40.11.h;Electricity by solar photovoltaic
+p40.11.i;Electricity by solar thermal
+p40.11.j;Electricity by tide, wave, ocean
+p40.11.k;Electricity by Geothermal
+p40.11.l;Electricity nec
+p40.12;Transmission services of electricity
+p40.13;Distribution and trade services of electricity
+p40.2.a;Coke oven gas
+p40.2.b;Blast Furnace Gas
+p40.2.c;Oxygen Steel Furnace Gas
+p40.2.d;Gas Works Gas
+p40.2.e;Biogas
+p40.2.1;Distribution services of gaseous fuels through mains
+p40.3;Steam and hot water supply services
+p41;Collected and purified water, distribution services of water
+p45;Construction work
+p45.w;Secondary construction material for treatment, Re-processing of secondary construction material into aggregates
+p50.a;Sale, maintenance, repair of motor vehicles, motor vehicles parts, motorcycles, motor cycles parts and accessoiries
+p50.b;Retail trade services of motor fuel
+p51;Wholesale trade and commission trade services, except of motor vehicles and motorcycles
+p52;"Retail  trade services, except of motor vehicles and motorcycles; repair services of personal and household goods"
+p55;Hotel and restaurant services
+p60.1;Railway transportation services
+p60.2;Other land transportation services
+p60.3;Transportation services via pipelines
+p61.1;Sea and coastal water transportation services
+p61.2;Inland water transportation services
+p62;Air transport services
+p63;"Supporting and auxiliary transport services; travel agency services"
+p64;Post and telecommunication services
+p65;Financial intermediation services, except insurance and pension funding services
+p66;Insurance and pension funding services, except compulsory social security services
+p67;Services auxiliary to financial intermediation
+p70;Real estate services
+p71;Renting services of machinery and equipment without operator and of personal and household goods
+p72;Computer and related services
+p73;Research and development services
+p74;Other business services
+p75;"Public administration and defence services; compulsory social security services"
+p80;Education services
+p85;Health and social work services
+p90.1.a;Food waste for treatment: incineration
+p90.1.b;Paper waste for treatment: incineration
+p90.1.c;Plastic waste for treatment: incineration
+p90.1.d;Intert/metal waste for treatment: incineration
+p90.1.e;Textiles waste for treatment: incineration
+p90.1.f;Wood waste for treatment: incineration
+p90.1.g;Oil/hazardous waste for treatment: incineration
+p90.2.a;Food waste for treatment: biogasification and land application
+p90.2.b;Paper waste for treatment: biogasification and land application
+p90.2.c;Sewage sludge for treatment: biogasification and land application
+p90.3.a;Food waste for treatment: composting and land application
+p90.3.b;Paper and wood waste for treatment: composting and land application
+p90.4.a;Food waste for treatment: waste water treatment
+p90.4.b;Other waste for treatment: waste water treatment
+p90.5.a;Food waste for treatment: landfill
+p90.5.b;Paper for treatment: landfill
+p90.5.c;Plastic waste for treatment: landfill
+p90.5.d;Inert/metal/hazardous waste for treatment: landfill
+p90.5.e;Textiles waste for treatment: landfill
+p90.5.f;Wood waste for treatment: landfill
+p91;Membership organisation services n.e.c.
+p92;Recreational, cultural and sporting services
+p93;Other services
+p95;Private households with employed persons
+p99;Extra-territorial organizations and bodies

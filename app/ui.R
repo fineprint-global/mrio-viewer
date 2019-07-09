@@ -35,19 +35,22 @@ ui <- function(request) {
       tabPanel(
         title = "Sankey",
         fluidRow(
+          # ----------------------------------------------------------------
+          # input elements -------------------------------------------------
+          # ----------------------------------------------------------------
           column(
             width = 2,
-            offset = 2,
+            offset = 1,
             # here, we put the input elements
             selectizeInput(inputId = "input_from_region",
                            label = "From Region",
-                           choices = c("Brazil", "Indonesia"))
+                           choices = c("Indonesia", "Brazil"))
           ),
           column(
             width = 2,
             selectizeInput(inputId = "input_from_product",
                            label = "From Product",
-                           choices = c("Cattle", "Soy"))
+                           choices = c("Oil, palm fruit", "Soyabeans", "Cattle, Buffaloes"))
           ),
           column(
             width = 3,
@@ -60,10 +63,19 @@ ui <- function(request) {
                         sep = "")
           ),
           column(
+            width = 2,
+            selectizeInput(inputId = "input_allocation",
+                           label = "Allocation",
+                           choices = c("Price", "Mass"))
+          ),
+          column(
             width = 1,
             bookmarkButton(label = "Share")
           )
         ),
+        # ----------------------------------------------------------------
+        # visualization --------------------------------------------------
+        # ----------------------------------------------------------------
         fluidRow(
           plotly::plotlyOutput(outputId = "sankey_plot")
         )

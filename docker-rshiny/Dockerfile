@@ -7,7 +7,8 @@ RUN apt-get update \
   && install2.r --error \
     plotly \
     RPostgreSQL \
-    pool
+    pool \
+    RColorBrewer
 
 # Copy configuration files into the Docker image
 COPY shiny-server.conf  /etc/shiny-server/shiny-server.conf

@@ -16,6 +16,7 @@
 library(shiny)
 library(tidyverse)
 library(pool)
+library(RColorBrewer)
 
 ##################################################################
 ### 2. Data setup
