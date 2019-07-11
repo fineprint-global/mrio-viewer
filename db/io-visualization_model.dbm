@@ -37,7 +37,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 <table name="element">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="600" y="980"/>
+	<position x="620" y="1020"/>
 	<column name="id" not-null="true">
 		<type name="smallserial" length="0"/>
 	</column>
@@ -227,7 +227,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 <table name="input-output_leontief">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="380" y="280"/>
+	<position x="440" y="160"/>
 	<column name="id" not-null="true">
 		<type name="bigserial" length="0"/>
 	</column>
@@ -263,7 +263,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 </textbox>
 
 <textbox name="element" font-size="9">
-	<position x="540" y="1120"/>
+	<position x="520" y="1140"/>
 	<comment><![CDATA[food, stockchanges,
 or nonfood sector (households, state, etc.)]]></comment>
 </textbox>
@@ -282,7 +282,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	 src-table="public.region_cluster"
 	 dst-table="public.region"
 	 src-required="false" dst-required="false"
-	 table-name="many_region_cluster_has_many_region">
+	 table-name="region_cluster_region">
 	<label ref-type="src-label">
 		<position x="-7.72331" y="4.85"/>
 	</label>
@@ -290,7 +290,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 		<position x="1.94006" y="7.75"/>
 	</label>
 	<label ref-type="name-label">
-		<position x="0" y="0"/>
+		<position x="-1.24239" y="-7.68566"/>
 	</label>
 </relationship>
 
@@ -335,6 +335,134 @@ or nonfood sector (households, state, etc.)]]></comment>
 		<columns names="id" ref-type="src-columns"/>
 	</constraint>
 </table>
+
+<index name="idx_region_geom" table="public.region"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="gist" factor="0">
+		<idxelement use-sorting="false">
+			<column name="geometry"/>
+		</idxelement>
+</index>
+
+<index name="idx_io_from_region" table="public.&quot;input-output_leontief&quot;"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="from_region"/>
+		</idxelement>
+</index>
+
+<index name="idx_io_from_product" table="public.&quot;input-output_leontief&quot;"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="from_product"/>
+		</idxelement>
+</index>
+
+<index name="idx_io_allocation" table="public.&quot;input-output_leontief&quot;"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="allocation"/>
+		</idxelement>
+</index>
+
+<index name="idx_io_to_region" table="public.&quot;input-output_leontief&quot;"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="to_region"/>
+		</idxelement>
+</index>
+
+<index name="idx_io_to_product" table="public.&quot;input-output_leontief&quot;"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="to_product"/>
+		</idxelement>
+</index>
+
+<index name="idx_io_year" table="public.&quot;input-output_leontief&quot;"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="year"/>
+		</idxelement>
+</index>
+
+<index name="idx_y_from_region" table="public.final_demand"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="from_region"/>
+		</idxelement>
+</index>
+
+<index name="idx_y_to_region" table="public.final_demand"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="to_region"/>
+		</idxelement>
+</index>
+
+<index name="idx_y_product" table="public.final_demand"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="product"/>
+		</idxelement>
+</index>
+
+<index name="idx_y_year" table="public.final_demand"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="year"/>
+		</idxelement>
+</index>
+
+<index name="idx_y_element" table="public.final_demand"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="element"/>
+		</idxelement>
+</index>
+
+<index name="idx_ei_from_region" table="public.env_intensity"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="from_region"/>
+		</idxelement>
+</index>
+
+<index name="idx_ei_from_product" table="public.env_intensity"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="from_product"/>
+		</idxelement>
+</index>
+
+<index name="idx_ei_year" table="public.env_intensity"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="year"/>
+		</idxelement>
+</index>
+
+<index name="idx_ei_env_factor" table="public.env_intensity"
+	 concurrent="false" unique="false" fast-update="false" buffering="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="env_factor"/>
+		</idxelement>
+</index>
 
 <constraint name="type_fk" type="fk-constr" comparison-type="MATCH FULL"
 	 upd-action="NO ACTION" del-action="NO ACTION" ref-table="public.type" table="public.element">
@@ -461,7 +589,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	 dst-table="public.element" reference-fk="element_fk"
 	 src-required="false" dst-required="false">
 	<label ref-type="name-label">
-		<position x="52.1092" y="-2.06668"/>
+		<position x="66.5358" y="-14.5266"/>
 	</label>
 </relationship>
 
@@ -552,7 +680,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	 dst-table="public.product" reference-fk="from_product_fk"
 	 src-required="false" dst-required="false">
 	<label ref-type="name-label">
-		<position x="2.7444" y="-31.5597"/>
+		<position x="-320.287" y="-18.5148"/>
 	</label>
 </relationship>
 
