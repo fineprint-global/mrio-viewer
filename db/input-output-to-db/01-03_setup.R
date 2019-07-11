@@ -56,11 +56,12 @@ file_names <- data.frame(
   final_demand = "Y",
   E = "E",
   X = "X",
-  B = c(paste0("B_inv_", allocation_type))
+  B = c(paste0("B_inv_", allocation_type)),
+  Z = c(paste0("Z_", allocation_type)) # similar structure to L.rds
 )
 
-## Other crucial information
-year_range <- c(1986:2013)
+# other crucial information
+year_range_orig <- c(2011:2010)
 
 ##################################################################
 ### 3. Create the database connection

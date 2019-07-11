@@ -1,16 +1,50 @@
 ##########################################################################
-### 5. E.rds - add environmental use (landuse and biomass)
+### 6. E.rds - add environmental use (landuse and biomass)
 ##########################################################################
 
-print("05_env-use.R")
+print("06_env-use.R")
 
 # ----------------------------------------------------------------
 # preparation ----------------------------------------------------
 # ----------------------------------------------------------------
-# get tables required for these operations
+
+# env_factor_unit table --------------------------------------------------
+env_factor_unit <- RPostgres::dbReadTable(db, "env_factor_unit")
+
+if(nrow(env_factor_unit) == 0){
+  
+  # TODO: ha/tonnes, tonnes/tonnes --> X.rds durch total prod of this year
+  insert_data <- data.frame(
+    name = c("ha", "tonnes") # ha for landuse, tonnes for biomass
+  )
+  
+  DBI::dbAppendTable(db, name = "env_factor_unit", value = insert_data)
+  
+  rm(insert_data)
+  
+  env_factor_unit <- RPostgres::dbReadTable(db, "env_factor_unit")
+}
+
+# env_factor table --------------------------------------------------
 env_factor <- RPostgres::dbReadTable(db, "env_factor")
-product <- RPostgres::dbReadTable(db, "product")
-region <- RPostgres::dbReadTable(db, "region")
+
+if(nrow(env_factor) == 0){
+  
+  insert_data <- data.frame(
+    name = c("landuse", "biomass"),
+    env_factor_unit = env_factor_unit$id
+  )
+  
+  DBI::dbAppendTable(db, name = "env_factor", value = insert_data)
+  
+  rm(insert_data)
+  
+  env_factor <- RPostgres::dbReadTable(db, "env_factor")
+}
+
+# get tables required for these operations
+product <- product_fabio
+region <- region_fabio
 
 # ----------------------------------------------------------------
 # get years ------------------------------------------------------
@@ -19,10 +53,10 @@ region <- RPostgres::dbReadTable(db, "region")
 # Check for which years we already have data for
 # care: in case you stopped an operation to the db or changed the original data
 # you should remove the data from the db before any other operations.
-year_range <- c(2013:1986)
+year_range <- year_range_orig
 # get all years from the db
 query <- sprintf('SELECT DISTINCT year FROM "%s";', 
-                 "env_use")
+                 "env_intensity")
 result <- RPostgres::dbGetQuery(db, query)$year
 # get all years that are NOT in the db
 year_range <- year_range[!(year_range %in% result)]
@@ -55,7 +89,7 @@ for(year in year_range){
     # REGION: join table, add ID, remove unnecessary cols
     dplyr::left_join(region, by = c("Country" = "name"), suffix = c("", ".region")) %>%
     dplyr::rename("from_region" = "id") %>%
-    dplyr::select(-Country, -iso3, -geometry) %>%
+    dplyr::select(-Country, -iso3) %>%
     # PRODUCT: join table, add ID, remove unnecessary cols
     dplyr::left_join(product, by = c("Item" = "name"), suffix = c("", ".product")) %>%
     dplyr::rename("from_product" = "id") %>%
@@ -89,7 +123,7 @@ for(year in year_range){
   
   rm(total_production)
   
-  # loop through env_use_vars, for us this is landuse and biomass
+  # loop through env_intensity_vars, for us this is landuse and biomass
   for(i in length(row.names(env_factor))){
     insert_data <- data %>%
       dplyr::mutate(env_factor = env_factor[i,]$id) %>%
@@ -98,18 +132,15 @@ for(year in year_range){
       dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
       dplyr::select(from_region, from_product, env_factor, year, amount)
 
-    # append env_use with the amount for the environmental factor currently in loop
-    RPostgres::dbAppendTable(db, name = "env_use", value = insert_data)
+    # append env_intensity with the amount for the environmental factor currently in loop
+    RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
   }
 
   rm(data, env_data, insert_data)
 }
 
-print("5. Populating env_use took")
+print("5. Populating env_intensity took")
 print(Sys.time()-start)
 # Time difference of 28.80357 mins
 
-# env_use <- RPostgres::dbReadTable(db, "env_use")
-
-
-
+# env_intensity <- RPostgres::dbReadTable(db, "env_intensity")

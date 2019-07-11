@@ -1,8 +1,8 @@
 ##################################################################
-### 6. Y.rds - add final demand
+### 7. Y.rds - add final demand
 ##################################################################
 
-print("06_final-demand.R")
+print("07_final-demand.R")
 
 # --------------------------------------------------------------
 # preparation --------------------------------------------------
@@ -51,8 +51,8 @@ if(nrow(element) == 0){
 }
 
 # other tables ---------------------------------------------------
-product <- RPostgres::dbReadTable(db, "product")
-region <- RPostgres::dbReadTable(db, "region")
+product <- product_fabio
+region <- region_fabio
 
 # ----------------------------------------------------------------
 # check years ----------------------------------------------------
@@ -61,7 +61,7 @@ region <- RPostgres::dbReadTable(db, "region")
 # Check for which years we already have data for
 # care: in case you stopped an operation to the db or changed the original data
 # you should remove the data from the db before any other operations.
-year_range <- c(2013:1986)
+year_range <- year_range_orig
 # get all years from the db
 query <- sprintf('SELECT DISTINCT year FROM "%s";', 
                  "final_demand")
@@ -95,7 +95,7 @@ for(year in year_range){
     dplyr::select(-REG_element) %>%
     # join region
     dplyr::left_join(region, by = c("iso3")) %>% 
-    dplyr::select(-name, -iso3, -geometry) %>% 
+    dplyr::select(-name, -iso3) %>% 
     dplyr::rename("from_region" = "id") %>% 
     # join element
     dplyr::left_join(element, by = c("element" = "name")) %>% 

@@ -5,6 +5,8 @@
 # Here, *FABIO* is used, so you will have to adjust your code to 
 # fit your own input-output table.
 
+# Note: per year 01-09 take around 8 hours to be saved into the db.
+
 ## STRUCTURE
 # 1. Load packages
 # 2. Setup environment variables
@@ -26,16 +28,16 @@
 source("01-03_setup.R")
 
 ################################################################################
-### 4. E.rds - add general info about product, region, landuse and biomass
+### 4. E.rds - add product info
 ################################################################################
 
-source("04_general-info.R")
+source("04_product-info.R")
 
 ################################################################################
-### 5. Add EXIOBASE info
+### 5. Add region info
 ################################################################################
 
-source("05_exio-info.R")
+source("05_region-info.R")
 
 ################################################################################
 ### 6. E.rds - add environmental use (landuse and biomass)
@@ -54,6 +56,26 @@ source("07_final-demand.R")
 ################################################################################
 
 source("08_input-output.R")
+
+################################################################################
+### 9. B_inv.rds - add input-output leontief for hybrid
+################################################################################
+
+source("09_B_inv.R")
+
+# ------------------------------------------------------------------------------
+# run vacuum analyze -----------------------------------------------------------
+# ------------------------------------------------------------------------------
+# we save the sendQuery into a variable to be able to clear the result
+
+# we don't run the VACUUM on region because geometry (indexed) is empty for now
+# DBI::dbSendQuery(db, statement = 'VACUUM ANALYZE "region";')
+v <- RPostgres::dbSendQuery(db, statement = 'VACUUM ANALYZE "env_intensity";')
+RPostgres::dbClearResult(v)
+v <- RPostgres::dbSendQuery(db, statement = 'VACUUM ANALYZE "input-output_leontief";')
+RPostgres::dbClearResult(v)
+v <- RPostgres::dbSendQuery(db, statement = 'VACUUM ANALYZE "final_demand";')
+RPostgres::dbClearResult(v)
 
 # finally, disconnect the DB
 DBI::dbDisconnect(db)
