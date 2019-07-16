@@ -50,9 +50,12 @@ if(nrow(element) == 0){
   element <- RPostgres::dbReadTable(db, "element")
 }
 
+element_fabio <- element %>% dplyr::slice(1:4)
+
 # other tables ---------------------------------------------------
 product <- product_fabio
 region <- region_fabio
+element <- element_fabio
 
 # ----------------------------------------------------------------
 # check years ----------------------------------------------------
@@ -63,8 +66,8 @@ region <- region_fabio
 # you should remove the data from the db before any other operations.
 year_range <- year_range_orig
 # get all years from the db
-query <- sprintf('SELECT DISTINCT year FROM "%s";', 
-                 "final_demand")
+query <- sprintf('SELECT DISTINCT year FROM "%s" WHERE element IN (%s);', 
+                 "final_demand", paste(element$id, collapse = ","))
 result <- RPostgres::dbGetQuery(db, query)$year
 # get all years that are NOT in the db
 year_range <- year_range[!(year_range %in% result)]

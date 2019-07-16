@@ -61,7 +61,7 @@ file_names <- data.frame(
 )
 
 # other crucial information
-year_range_orig <- c(2011:2010)
+year_range_orig <- c(2013:2010)
 
 ##################################################################
 ### 3. Create the database connection

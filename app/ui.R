@@ -53,7 +53,7 @@ ui <- function(request) {
                            choices = c("Oil, palm fruit", "Soyabeans", "Cattle, Buffaloes"))
           ),
           column(
-            width = 3,
+            width = 2,
             sliderInput(inputId = "input_year", 
                         label = "Year", 
                         min = 1986,

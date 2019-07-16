@@ -100,8 +100,7 @@ for(t in c(1:nrow(allocation))){
     print("Saving current year to db")
     RPostgres::dbAppendTable(db, name = "input-output_leontief", value = insert_data)
     print(Sys.time()-start)
-    # Time difference of 1.808534 days (with 50M rows)
-    # Time difference of 17.7575 mins (with 380k rows)
+    # Time difference of 3.603777 hours
     
     rm(insert_data)
     
