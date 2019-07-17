@@ -7,7 +7,10 @@ print("05_region-info.R")
 name_fabio <- "FABIO"
 name_exio <- "EXIOBASE"
 
-regions_fabio <- read.csv2("../data/regions_fabio.csv")
+# setwd("db/input-output-to-db")
+
+# setting the encoding to latin1 is needed because Côte d'Ivoire has special chars
+regions_fabio <- read.csv2("../data/regions_fabio.csv", encoding = "latin1")
 regions_fao_exio <- read.csv2("../data/regions_fao-exio.csv")
 
 regions_exio <- regions_fao_exio %>% 
@@ -111,6 +114,65 @@ region_exio <- region_tbl %>%
   dplyr::filter(name.cluster == name_exio) %>% 
   dplyr::select(-name.cluster) %>% 
   dplyr::collect()
+
+# functions for region_aggregate and _cluster ----------------------------------
+add_region_aggregate <- function(db, 
+                                 region_aggregate_id, 
+                                 region_in_aggregate_ids){
+  
+  # 1. check if the db is valid
+  if(!DBI::dbIsValid(db)){
+    base::stop("Database connection is invalid.")
+  }
+  
+  # 1. check the args with the ids from the db to make sure all are region ids
+  ids <- dplyr::tbl(db, "region") %>% dplyr::select(id) %>% dplyr::collect()
+  
+  if(!(region_aggregate_id %in% ids$id)){
+    base::stop("Region_aggregate_id is not in the list of possible ids from the database.")
+  }
+  if(any(!(region_in_aggregate_ids %in% ids$id))){
+    base::stop("At least one of the region_in_aggregate_ids is not 
+                in the list of possible ids from the database.")
+  }
+  
+  # before we insert the data, we check for data already in the db
+  reg_agg <- dplyr::tbl(db, "region_aggregate") %>% 
+    dplyr::filter(region_aggregate == region_aggregate_id) %>% 
+    dplyr::select(region_in_aggregate) %>% 
+    dplyr::collect()
+  
+  region_in_aggregate_ids <- region_in_aggregate_ids[!(region_in_aggregate_ids %in%
+                                                       reg_agg$region_in_aggregate)]
+  
+  if(length(region_in_aggregate_ids) == 0){ return() }
+  
+  # create the insert_data
+  insert_data <- data.frame(
+    region_aggregate = region_aggregate_id,
+    region_in_aggregate = region_in_aggregate_ids
+  )
+  
+  # insert data into the db, if it doesn't exist yet
+  DBI::dbAppendTable(db, name = "region_aggregate", value = insert_data)
+}
+
+# add_region_aggregate(db, region_aggregate_id = 193, region_in_aggregate_ids = c(9))
+
+# match FABIO and EXIOBASE regions in region_aggregate -------------------------
+for(reg_exio_id in region_exio$id){
+  reg_exio_name <- region_exio$name[region_exio$id == reg_exio_id]
+  
+  # get all FAO countries in this EXIOregion
+  regions_in_aggregate <- regions_fao_exio$Country[regions_fao_exio$EXIOregion == 
+                                                     reg_exio_name &
+                                                   !is.na(regions_fao_exio$EXIOregion)]
+  
+  # now get the ids from the database for all exact matches in the names
+  ids <- region_fabio$id[region_fabio$name %in% regions_in_aggregate]
+  
+  add_region_aggregate(db, reg_exio_id, ids)
+}
 
 # FABIO continent-data for region_cluster --------------------------------------
 ## now we take the data for Continent and create a region cluster
