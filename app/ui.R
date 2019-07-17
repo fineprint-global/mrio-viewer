@@ -44,21 +44,21 @@ ui <- function(request) {
             # here, we put the input elements
             selectizeInput(inputId = "input_from_region",
                            label = "From Region",
-                           choices = c("Indonesia", "Brazil"))
+                           choices = region_fabio$name)
           ),
           column(
             width = 2,
             selectizeInput(inputId = "input_from_product",
                            label = "From Product",
-                           choices = c("Oil, palm fruit", "Soyabeans", "Cattle, Buffaloes"))
+                           choices = product_fabio$name)
           ),
           column(
             width = 2,
             sliderInput(inputId = "input_year", 
                         label = "Year", 
-                        min = 1986,
-                        max = 2013,
-                        value = 2013,
+                        min = year_max_min$min,
+                        max = year_max_min$max,
+                        value = year_max_min$max,
                         step = 1,
                         sep = "")
           ),
@@ -66,7 +66,7 @@ ui <- function(request) {
             width = 2,
             selectizeInput(inputId = "input_allocation",
                            label = "Allocation",
-                           choices = c("Price", "Mass"))
+                           choices = allocation_conc$name)
           ),
           column(
             width = 1,
