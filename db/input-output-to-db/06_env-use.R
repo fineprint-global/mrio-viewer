@@ -119,12 +119,12 @@ for(year in year_range){
   data <- env_data %>% 
     dplyr::left_join(total_production, by = c("from_region" = "from_region", 
                                               "from_product" = "from_product")) %>% 
-    dplyr::mutate(total_production = value)
+    dplyr::rename(total_production = value)
   
   rm(total_production)
   
   # loop through env_intensity_vars, for us this is landuse and biomass
-  for(i in length(row.names(env_factor))){
+  for(i in c(1:length(row.names(env_factor)))){
     insert_data <- data %>%
       dplyr::mutate(env_factor = env_factor[i,]$id) %>%
       dplyr::rename("amount" = env_factor[i,]$name_data) %>%
