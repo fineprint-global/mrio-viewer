@@ -6,7 +6,6 @@
 # 3. Sankey Visualization
 # 4. About
 
-
 # Define UI
 ui <- function(request) {
   tagList(
@@ -42,19 +41,21 @@ ui <- function(request) {
             width = 2,
             offset = 1,
             # here, we put the input elements
-            selectizeInput(inputId = "input_from_region",
+            selectizeInput(inputId = "from_region",
                            label = "From Region",
-                           choices = region_fabio$name)
+                           choices = region_fabio$name,
+                           selected = "Brazil")
           ),
           column(
             width = 2,
-            selectizeInput(inputId = "input_from_product",
+            selectizeInput(inputId = "from_product",
                            label = "From Product",
-                           choices = product_fabio$name)
+                           choices = product_fabio$name,
+                           selected = "Soyabeans")
           ),
           column(
             width = 2,
-            sliderInput(inputId = "input_year", 
+            sliderInput(inputId = "year", 
                         label = "Year", 
                         min = year_max_min$min,
                         max = year_max_min$max,
@@ -63,10 +64,17 @@ ui <- function(request) {
                         sep = "")
           ),
           column(
-            width = 2,
-            selectizeInput(inputId = "input_allocation",
+            width = 1,
+            selectizeInput(inputId = "allocation",
                            label = "Allocation",
                            choices = allocation_conc$name)
+          ),
+          column(
+            width = 1,
+            selectizeInput(inputId = "env_factor",
+                           label = "Environmental factor",
+                           choices = env_factor_conc$name,
+                           selected = "biomass")
           ),
           column(
             width = 1,

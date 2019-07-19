@@ -9,6 +9,9 @@
 # 1. Load packages
 # 2. Data setup
 
+print("global.R")
+start <- Sys.time()
+
 ##################################################################
 ### 1. Load packages
 ##################################################################
@@ -60,6 +63,8 @@ region_tbl <- dplyr::tbl(pool, "region") %>%
   dplyr::filter(name.cluster %in% c(name_fabio, name_exio)) %>%
   dplyr::select(-geometry, -id_region_cluster)
 
+region_conc <- region_tbl %>% dplyr::collect()
+
 region_fabio <- region_tbl %>% 
   dplyr::filter(name.cluster == name_fabio) %>% 
   dplyr::select(-name.cluster) %>% 
@@ -83,7 +88,7 @@ region_aggregated <- region_fabio %>%
 # EXIOBASE products afterwards in the visualization
 product_conc <- dplyr::tbl(pool, "product") %>% dplyr::collect()
 product_fabio <- product_conc %>% dplyr::slice(1:130)
-product_exio <- product_conc %>% dplyr::slice(131:nrow(product))
+product_exio <- product_conc %>% dplyr::slice(131:nrow(product_conc))
 
 product_group_conc <- dplyr::tbl(pool, "product_group") %>% dplyr::collect()
 product_unit_conc <- dplyr::tbl(pool, "product_unit") %>% dplyr::collect()
@@ -107,3 +112,6 @@ element_conc <- dplyr::tbl(pool, "element") %>% dplyr::collect()
 type_conc <- dplyr::tbl(pool, "type") %>% dplyr::collect()
 
 element_type <- element_conc %>% dplyr::left_join(type_conc, by = c("type" = "id"), suffix = c("", ".type"))
+
+print("global.R took ...")
+print(Sys.time()-start)
