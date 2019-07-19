@@ -53,15 +53,28 @@ region <- region_fabio
 # Check for which years we already have data for
 # care: in case you stopped an operation to the db or changed the original data
 # you should remove the data from the db before any other operations.
-year_range <- year_range_orig
+year_range_landuse <- year_range_orig
 # get all years from the db
-query <- sprintf('SELECT DISTINCT year FROM "%s";', 
-                 "env_intensity")
+query <- sprintf('SELECT DISTINCT year FROM "%s" WHERE env_factor = %.0f;', 
+                 "env_intensity", env_factor$id[env_factor$name == "landuse"])
 result <- RPostgres::dbGetQuery(db, query)$year
 # get all years that are NOT in the db
-year_range <- year_range[!(year_range %in% result)]
+year_range_landuse <- year_range_landuse[!(year_range_landuse %in% result)]
 
 rm(query, result)
+
+year_range_biomass <- year_range_orig
+# get all years from the db
+query <- sprintf('SELECT DISTINCT year FROM "%s" WHERE env_factor = %.0f;', 
+                 "env_intensity", env_factor$id[env_factor$name == "biomass"])
+result <- RPostgres::dbGetQuery(db, query)$year
+# get all years that are NOT in the db
+year_range_biomass <- year_range_biomass[!(year_range_biomass %in% result)]
+
+rm(query, result)
+
+# combine both to only collect data once
+year_range <- c(year_range_biomass, year_range_landuse[!(year_range_landuse %in% year_range_biomass)])
 
 # ----------------------------------------------------------------
 # get data and insert --------------------------------------------
@@ -122,6 +135,29 @@ for(year in year_range){
     dplyr::rename(total_production = value)
   
   rm(total_production)
+  
+  if(year %in% year_range_biomass){
+    insert_data <- data %>%
+      dplyr::mutate(env_factor = env_factor_conc$id[env_factor_conc$name == "biomass"]) %>%
+      dplyr::rename("amount" = env_factor_conc$name_data[env_factor_conc$name == "biomass"]) %>%
+      # now we create amount as an environmental pressure by dividing it by total_production
+      dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
+      dplyr::select(from_region, from_product, env_factor, year, amount)
+    
+    # append env_intensity with the amount for the environmental factor currently in loop
+    RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
+  }
+  if(year %in% year_range_landuse){
+    insert_data <- data %>%
+      dplyr::mutate(env_factor = env_factor_conc$id[env_factor_conc$name == "landuse"]) %>%
+      dplyr::rename("amount" = env_factor_conc$name_data[env_factor_conc$name == "landuse"]) %>%
+      # now we create amount as an environmental pressure by dividing it by total_production
+      dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
+      dplyr::select(from_region, from_product, env_factor, year, amount)
+    
+    # append env_intensity with the amount for the environmental factor currently in loop
+    RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
+  }
   
   # loop through env_intensity_vars, for us this is landuse and biomass
   for(i in c(1:length(row.names(env_factor)))){
