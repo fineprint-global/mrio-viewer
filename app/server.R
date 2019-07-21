@@ -47,6 +47,8 @@ server <- function(input, output, session) {
     
     env_factor <- input$env_factor
     
+    total_footprint <- 0
+    
     ############################################################################
     # Calculate footprints
     ############################################################################
@@ -204,27 +206,82 @@ server <- function(input, output, session) {
       dplyr::group_by(from_region, from_product, to_region) %>% 
       dplyr::summarise(envFP = sum(envFP, na.rm = T))
     
+    total_footprint <- sum(step1$envFP)
+    
     step2 <- agg %>% 
       dplyr::group_by(to_region, to_product, to_region_y) %>% 
       dplyr::summarise(envFP = sum(envFP, na.rm = T))
     
+    ## this is the third set of nodes: production country & top products
+    step_production_product <- step2 %>% 
+      dplyr::group_by(to_region, to_product) %>% 
+      dplyr::rename(region = to_region, product = to_product) %>% 
+      dplyr::summarise(envFP = sum(envFP, na.rm = T))
+    
+    top_spp <- step_production_product %>% 
+      dplyr::ungroup() %>% 
+      dplyr::top_n(5, envFP)
+    
+    ### if a product + region - combo is now in the top, the name will remain the same, 
+    ### otherwise it will be renamed to Food/Nonfood (Region)
+    
+    product_other <- list(
+      food = max(product_conc$id)+1L,
+      nonfood = max(product_conc$id)+2L
+    )
+    
+    step_production_product <- step_production_product %>% 
+      dplyr::mutate(product_agg = 
+                      if_else(paste0(region, product) %in% paste0(top_spp$region, top_spp$product), 
+                              product, 
+                              if_else(product %in% product_fabio$id, 
+                                      product_other$food,
+                                      product_other$nonfood))) %>%
+      dplyr::left_join(region_conc[,c("id", "name", "iso3")], by = c("region" = "id")) %>% 
+      dplyr::rename(region_name = name) %>% 
+      dplyr::left_join(product_conc[,c("id", "name")], by = c("product_agg" = "id")) %>% 
+      dplyr::rename(product_agg_name = name) %>% 
+      dplyr::mutate(product_agg_name = if_else(!is.na(product_agg_name), 
+                                               product_agg_name,
+                                               if_else(product_agg == product_other$food,
+                                                       "Food", "Nonfood"))) %>% 
+      dplyr::mutate(node_name = sprintf("%s (%s)", product_agg_name, region_name))
+    
     # nodes --------------------------------------------------------------------
+    ## start node
     nodes_1 <- data.frame(
       id = unique(step1$from_region),
       step = 0 # 0 for start
     )
+    ## raw product goes to country for production
     nodes_2 <- data.frame(
       id = unique(step1$to_region),
-      step = 1 # 1 for middle
+      step = 1 # 1 for countries receiving the raw product
     )
+    ## these product are produced in the production country 
+    ### different variable name is used because it is treated differently
+    nodes_production_product <- step_production_product %>% 
+      dplyr::group_by(region, iso3, product_agg, node_name, region_name) %>% 
+      dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
+      dplyr::mutate(step = 2) %>% 
+      dplyr::mutate(id = sprintf("%.0f_%.0f", region, product_agg)) %>% 
+      dplyr::rename(name = node_name, region_id = region) %>% 
+      dplyr::ungroup() %>% 
+      dplyr::select(id, step, name, iso3, region_name, region_id)
+    
+    ## final consumption of product in:
     nodes_3 <- data.frame(
       id = unique(step2$to_region_y),
-      step = 2 # 2 for end
+      step = 3 # 3 for end
     )
     
     nodes <- rbind(nodes_1, nodes_2, nodes_3)
     rm(nodes_1, nodes_2, nodes_3)
-    nodes <- nodes %>% dplyr::left_join(region_conc[,c("id", "name", "iso3")], by = c("id" = "id"))
+    nodes <- nodes %>% 
+      dplyr::left_join(region_conc[,c("id", "name", "iso3")], by = c("id" = "id")) %>% 
+      dplyr::mutate(region_id = id) 
+      # we keep this extra column because the id is something different for
+      # nodes_production_product
     
     ## generate colors and make sure that regions with the same name have the same color
     reg_colors <-
@@ -234,7 +291,19 @@ server <- function(input, output, session) {
     
     nodes$color <- reg_colors$color[match(nodes$name, reg_colors$region)]
     
+    nodes_production_product$color <- reg_colors$color[match(nodes_production_product$region_name, reg_colors$region)]
+    
+    nodes_production_product <- nodes_production_product %>% 
+      dplyr::select(-region_name)
+    
+    nodes <- rbind(nodes, nodes_production_product)
+    
     nodes$index <- c(0:(nrow(nodes)-1))
+    
+    # now we store the information about the index in step_production_product
+    # to make matching easier
+    step_production_product$index <- nodes$index[match(step_production_product$node_name, 
+                                                       nodes$name)]
     
     # links --------------------------------------------------------------------
     step1 <- step1 %>% 
@@ -248,10 +317,21 @@ server <- function(input, output, session) {
       dplyr::ungroup() %>% 
       dplyr::select(source, target, amount, product, color)
     
+    step1_2 <- step_production_product %>% 
+      dplyr::mutate(
+        source = nodes[nodes$step == 1,]$index[match(region, nodes[nodes$step == 1,]$id)],
+        target = index
+      ) %>% 
+      dplyr::mutate(color = if_else(from_product %in% product_fabio$id, "rgba(38, 166, 91, .3)", "rgba(149, 165, 166, .3)")) %>% 
+      dplyr::left_join(product_conc[,c("id", "name", "product_group")], by = c("product" = "id"), suffix = c("", "_product")) %>% 
+      dplyr::rename(product_id = product, product = name, amount = envFP) %>% 
+      dplyr::ungroup() %>% 
+      dplyr::select(source, target, amount, product, color)
+    
     step2 <- step2 %>% 
       dplyr::mutate(
-        source = nodes[nodes$step == 1,]$index[match(to_region, nodes[nodes$step == 1,]$id)],
-        target = nodes[nodes$step == 2,]$index[match(to_region_y, nodes[nodes$step == 2,]$id)]
+        source = step_production_product$index[match(paste0(to_region, to_product), paste0(step_production_product$region,step_production_product$product))],
+        target = nodes[nodes$step == 3,]$index[match(to_region_y, nodes[nodes$step == 3,]$id)]
       ) %>% 
       dplyr::mutate(color = if_else(to_product %in% product_fabio$id, "rgba(38, 166, 91, .3)", "rgba(149, 165, 166, .3)")) %>%
       dplyr::left_join(product_conc[,c("id", "name", "product_group")], by = c("to_product" = "id"), suffix = c("", "_product")) %>% 
@@ -259,7 +339,7 @@ server <- function(input, output, session) {
       dplyr::ungroup() %>% 
       dplyr::select(source, target, amount, product, color)
     
-    links <- rbind(step1, step2)
+    links <- rbind(step1, step1_2, step2)
     
     # SANKEY: NODES
     # create list of nodes
@@ -309,7 +389,7 @@ server <- function(input, output, session) {
                         region_conc$name[region_conc$id == from_region], 
                         year,
                         env_factor,
-                        sum(links$amount)),
+                        sum(total_footprint)),
         # paper_bgcolor = "green",
         xaxis = list(showgrid = F, zeroline = F, showticklabels = F),
         yaxis = list(showgrid = F, zeroline = F, showticklabels = F)
