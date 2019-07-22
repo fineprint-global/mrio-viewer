@@ -138,8 +138,8 @@ for(year in year_range){
   
   if(year %in% year_range_biomass){
     insert_data <- data %>%
-      dplyr::mutate(env_factor = env_factor_conc$id[env_factor_conc$name == "biomass"]) %>%
-      dplyr::rename("amount" = env_factor_conc$name_data[env_factor_conc$name == "biomass"]) %>%
+      dplyr::mutate(env_factor = env_factor$id[env_factor$name == "biomass"]) %>%
+      dplyr::rename("amount" = env_factor$name_data[env_factor$name == "biomass"]) %>%
       # now we create amount as an environmental pressure by dividing it by total_production
       dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
       dplyr::select(from_region, from_product, env_factor, year, amount)
@@ -149,8 +149,8 @@ for(year in year_range){
   }
   if(year %in% year_range_landuse){
     insert_data <- data %>%
-      dplyr::mutate(env_factor = env_factor_conc$id[env_factor_conc$name == "landuse"]) %>%
-      dplyr::rename("amount" = env_factor_conc$name_data[env_factor_conc$name == "landuse"]) %>%
+      dplyr::mutate(env_factor = env_factor$id[env_factor$name == "landuse"]) %>%
+      dplyr::rename("amount" = env_factor$name_data[env_factor$name == "landuse"]) %>%
       # now we create amount as an environmental pressure by dividing it by total_production
       dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
       dplyr::select(from_region, from_product, env_factor, year, amount)
