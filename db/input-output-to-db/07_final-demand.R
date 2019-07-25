@@ -97,15 +97,15 @@ for(year in year_range){
     dplyr::mutate(element = substr(REG_element, 5, nchar(REG_element))) %>% # get element name
     dplyr::select(-REG_element) %>%
     # join region
-    dplyr::left_join(region, by = c("iso3")) %>% 
-    dplyr::select(-name, -iso3) %>% 
-    dplyr::rename("from_region" = "id") %>% 
+    dplyr::left_join(region[,c("id", "iso3")], by = c("iso3")) %>% 
+    dplyr::select(-iso3) %>% 
+    dplyr::rename("to_region" = "id") %>% 
     # join element
-    dplyr::left_join(element, by = c("element" = "name")) %>% 
-    dplyr::select(-element, -type) %>% 
+    dplyr::left_join(element[,c("id", "name")], by = c("element" = "name")) %>% 
+    dplyr::select(-element) %>% 
     dplyr::rename("element" = "id") %>% 
     dplyr::mutate(year = year) %>%
-    dplyr::mutate(to_region = rep(region$id, each = 130, times = 4*192)) %>% # each for 130 products, 4 elem * 192 countries
+    dplyr::mutate(from_region = rep(region$id, each = 130, times = 4*192)) %>% # each for 130 products, 4 elem * 192 countries
     dplyr::mutate(product = rep(product$id, times = 4*192^2)) %>% # 4 elements * 192 countries * 192 countries
     dplyr::select(from_region, to_region, product, element, year, amount) %>% 
     dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) # filter the amount
