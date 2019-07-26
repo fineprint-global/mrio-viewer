@@ -30,6 +30,7 @@ if(nrow(allocation) == 0){
 # get other tables -----------------------------------------------
 product <- product_fabio
 region <- region_fabio
+product_group <- RPostgres::dbReadTable(db, "product_group")
 
 n_product <- nrow(product)
 n_region <- nrow(region)
@@ -103,7 +104,19 @@ for(t in c(1:nrow(allocation))){
       dplyr::mutate(to_region = rep(region$id, each = n_product*n_region*n_product)) %>% # first, there is always region 1, then region 2 etc.
       dplyr::mutate(to_product = rep(product$id, each = n_product*n_region, times = n_region)) %>% # the first column is to_product 1 and to_region 1 130*192 times
       dplyr::mutate(year = year) %>%
-      dplyr::mutate(allocation = allocation[t,]$id) %>%
+      dplyr::mutate(allocation = allocation[t,]$id)
+    
+    # TEMPORARY until updated in underlying data
+    # change the amount of livestock_products from 1000 head to head 
+    livestock_products <- product$id[product$product_group == product_group$id[product_group$name == "Livestock"]]
+    
+    insert_data <- insert_data %>% 
+      dplyr::mutate(amount = if_else(from_product %in% livestock_products, 
+                                     amount * 1000,
+                                     amount))
+    
+    # now we filter for amounts > 0.01
+    insert_data <- insert_data %>% 
       # dplyr::filter(amount != 0) %>% # this significantly reduces our number of rows (e.g. for 2013 it's down by over 90%!)
       # dplyr::filter(amount > 0.01 | amount < -0.01) %>% # this significantly reduces our number of rows (e.g. for 2013 it's down by over 99.99955%!)
       dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% # this significantly reduces our number of rows (e.g. for 2013 it's down by over 99.99939%!)

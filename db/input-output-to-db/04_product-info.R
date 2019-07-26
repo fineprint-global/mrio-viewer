@@ -6,7 +6,10 @@ print("04_product-info.R")
 
 # get information about FABIO products
 product_info <- read.csv2("../data/items_fabio.csv") %>% 
-  dplyr::select(Com.Code, Item, Unit, Group) #, Com.Group)
+  dplyr::select(Com.Code, Item, Unit, Group) %>% #, Com.Group)
+  # change the unit for Livestock from 1000 Head to head
+  dplyr::mutate(Unit = as.character(Unit)) %>% 
+  dplyr::mutate(Unit = if_else(Unit == "1000 Head", "head", Unit))
 
 # product_group table --------------------------------------------------
 product_group <- RPostgres::dbReadTable(db, "product_group")
