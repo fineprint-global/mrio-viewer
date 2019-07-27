@@ -31,8 +31,20 @@ server <- function(input, output, session) {
     req(input$from_product)
     req(input$year)
     req(input$allocation)
+    req(input$top_n)
     
     time <- Sys.time()
+    
+    # create a Progress object
+    progress <- shiny::Progress$new()
+    # make sure it closes when we exit this reactive, even if there's an error
+    on.exit(progress$close())
+    # set the first message and provide more detail
+    progress$set(message = "Fetching data from the database", 
+                 detail = "environmental impact data", 
+                 value = 0)
+    # define the number of steps for the progress bar to reach 100%
+    n_steps <- 7
     
     from_region <- region_fabio$id[region_fabio$name==input$from_region]
     from_product <- product_fabio$id[product_fabio$name==input$from_product]
@@ -40,6 +52,8 @@ server <- function(input, output, session) {
     allocation <- allocation_conc$id[allocation_conc$name == input$allocation]
     
     env_factor <- input$env_factor
+    
+    top_n <- input$top_n
     
     # replace with input
     # from_region <- region_fabio$id[region_fabio$name=="Brazil"]
@@ -116,6 +130,8 @@ server <- function(input, output, session) {
     
     # FABIO --------------------------------------------------------------------
     
+    progress$inc(1/n_steps, detail = "food data")
+    
     # 2. get io-leontief
     FABIO_io_leontief <- io_leontief_tbl %>% 
       dplyr::filter(from_region == !!from_region,
@@ -188,6 +204,8 @@ server <- function(input, output, session) {
     
     # EXIOBASE -----------------------------------------------------------------
     
+    progress$inc(1/n_steps, detail = "nonfood data")
+    
     # 2. get io-leontief
     EXIO_io_leontief <- io_leontief_tbl %>% 
       dplyr::filter(from_region == !!from_region,
@@ -230,22 +248,24 @@ server <- function(input, output, session) {
       result_exio <- NULL
     }
     
+    progress$inc(1/n_steps, message = "Aggregating results", detail = "")
+    
     results <- base::rbind(result_exio, result_fabio)
     
     # Now: let's aggregate
     # we only have one from_region and one from_product
-    # we take the top 5 to_regions
-    # we take the top 5 to_regions_y
+    # we take the top 5 (or top_n if user input) to_regions
+    # we take the top 5 (or top_n if user input) to_regions_y
     
     top_to_reg <- results %>% 
       dplyr::group_by(to_region) %>% 
       dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
-      dplyr::top_n(5, envFP)
+      dplyr::top_n(top_n, envFP)
     
     top_to_reg_y <- results %>% 
       dplyr::group_by(to_region_y) %>% 
       dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
-      dplyr::top_n(5, envFP)
+      dplyr::top_n(top_n, envFP)
     
     agg <- results %>%
       dplyr::mutate(to_region = if_else(to_region %in% top_to_reg$to_region, to_region, 192L)) %>% 
@@ -275,7 +295,7 @@ server <- function(input, output, session) {
     
     ### if a product + region - combo is now in the top, the name will remain the same, 
     ### otherwise it will be renamed to Food/Nonfood (Region)
-    
+    # create two new product IDs representing food and nonfood
     product_other <- list(
       food = max(product_conc$id)+1L,
       nonfood = max(product_conc$id)+2L
@@ -299,6 +319,8 @@ server <- function(input, output, session) {
       dplyr::mutate(node_name = sprintf("%s (%s)", product_agg_name, region_name))
     
     # nodes --------------------------------------------------------------------
+    progress$inc(1/n_steps, message = "Preparing nodes", detail = "")
+    
     ## start node
     nodes_1 <- data.frame(
       id = unique(step1$from_region),
@@ -339,11 +361,15 @@ server <- function(input, output, session) {
     
     ## generate colors and make sure that regions with the same name have the same color
     if(n_cols < 12){ # maximum number of colors in default palettes
+      colors <- RColorBrewer::brewer.pal(n_cols, "Set3")
       # now we get the colors
       reg_colors <- data.frame(
-        color = RColorBrewer::brewer.pal(n_cols, "Set3"),
+        # we have this subset here for the special case of 2 regions
+        # as otherwise there would be an error as RColorBrewer returns at least 3 colors
+        color = colors[1:n_cols], 
         region = unique(nodes$name)
       )
+      rm(colors)
     } else {
       # now we get the colors
       reg_colors <- data.frame(
@@ -369,6 +395,8 @@ server <- function(input, output, session) {
                                                        nodes$name)]
     
     # links --------------------------------------------------------------------
+    progress$inc(1/n_steps, message = "Linking the nodes", detail = "")
+    
     step1 <- step1 %>% 
       dplyr::mutate(
         source = nodes[nodes$step == 0,]$index[match(from_region, nodes[nodes$step == 0,]$id)],
@@ -404,10 +432,30 @@ server <- function(input, output, session) {
     
     links <- rbind(step1, step1_2, step2)
     
+    source_links <- links %>% 
+      dplyr::group_by(source) %>% 
+      dplyr::summarise(amount = sum(amount, na.rm = TRUE))
+    
+    target_links <- links %>% 
+      dplyr::group_by(target) %>% 
+      dplyr::summarise(amount = sum(amount, na.rm = TRUE))
+    
+    nodes_tmp <- nodes
+    
+    nodes <- nodes %>% 
+      dplyr::left_join(source_links, by = c("index" = "source")) %>% 
+      dplyr::left_join(target_links, by = c("index" = "target"), suffix = c("", ".tgt")) %>%
+      dplyr::group_by(id) %>% 
+      dplyr::mutate(amount = max(amount, amount.tgt, na.rm = TRUE)) %>% 
+      dplyr::ungroup() %>% 
+      dplyr::select(-amount.tgt) %>% 
+      dplyr::mutate(percent = amount / total_footprint * 100)
+      
+    
     # SANKEY: NODES
     # create list of nodes
     node_list <- list(
-      label = nodes$name,
+      label = sprintf("%s (%.0f%%)", nodes$name, nodes$percent),
       color = nodes$color,
       pad = 15,
       thickness = 30,
@@ -426,6 +474,8 @@ server <- function(input, output, session) {
       color = links$color,
       label = sprintf("<b>%s</b><br>%.2f %% of total", links$product, links$amount/sum(links$amount)*100)
     )
+    
+    progress$inc(1/n_steps, message = "Preparing plot", detail = "")
     
     p <- plotly::plot_ly(
       type = "sankey",
@@ -460,6 +510,8 @@ server <- function(input, output, session) {
     
     # print out the time
     print(Sys.time() - time)
+    
+    progress$inc(1/n_steps, detail = "... now plotting...")
     
     p
   })

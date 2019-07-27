@@ -78,6 +78,15 @@ ui <- function(request) {
           ),
           column(
             width = 1,
+            numericInput(inputId = "top_n",
+                         label = "n of regions to not aggregate",
+                         value = 5,
+                         min = 1,
+                         max = 49,
+                         step = 1)
+          ),
+          column(
+            width = 1,
             bookmarkButton(label = "Share")
           )
         ),
