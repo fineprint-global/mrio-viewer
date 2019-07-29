@@ -175,7 +175,7 @@ for(year in year_range){
   rm(data, env_data, insert_data)
 }
 
-print("5. Populating env_intensity took")
+print("6. Populating env_intensity took")
 print(Sys.time()-start)
 # Time difference of 28.80357 mins
 
