@@ -113,6 +113,9 @@ for(t in c(1:nrow(allocation))){
     insert_data <- insert_data %>% 
       dplyr::mutate(amount = if_else(from_product %in% livestock_products, 
                                      amount * 1000,
+                                     amount)) %>% 
+      dplyr::mutate(amount = if_else(to_product %in% livestock_products, 
+                                     amount / 1000,
                                      amount))
     
     # now we filter for amounts >= 0.01
