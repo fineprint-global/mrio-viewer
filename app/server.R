@@ -40,12 +40,15 @@ server <- function(input, output, session) {
     # make sure it closes when we exit this reactive, even if there's an error
     on.exit(progress$close())
     # set the first message and provide more detail
+    # message will be displayed as a bold text whereas 
+    # detail displays more info in a normal font weight
     progress$set(message = "Fetching data from the database", 
                  detail = "environmental impact data", 
                  value = 0)
     # define the number of steps for the progress bar to reach 100%
     n_steps <- 7
     
+    # get user inputs
     from_region <- region_fabio$id[region_fabio$name==input$from_region]
     from_product <- product_fabio$id[product_fabio$name==input$from_product]
     year <- input$year
@@ -55,12 +58,13 @@ server <- function(input, output, session) {
     
     top_n <- input$top_n
     
-    # replace with input
+    # # uncomment this in case you want to execute parts of the code manually     
     # from_region <- region_fabio$id[region_fabio$name=="Brazil"]
-    # from_product <- product_fabio$id[product_fabio$name=="Cattle"]
-    # year <- 2013
+    # from_product <- product_fabio$id[product_fabio$name=="Soyabeans"]
+    # year <- 2010
     # allocation <- allocation_conc$id[allocation_conc$name == "price"]
     # env_factor <- "biomass"
+    # top_n <- 5
     
     total_footprint <- 0
     
@@ -130,7 +134,7 @@ server <- function(input, output, session) {
     
     # FABIO --------------------------------------------------------------------
     
-    progress$inc(1/n_steps, detail = "food data")
+    progress$inc(1/n_steps, detail = "food data & calculating footprints") # update progress
     
     # 2. get io-leontief
     FABIO_io_leontief <- io_leontief_tbl %>% 
@@ -143,14 +147,6 @@ server <- function(input, output, session) {
     
     new_from_regions <- unique(FABIO_io_leontief$to_region)
     new_products <- unique(FABIO_io_leontief$to_product)
-    
-    # recode FABIO to EXIO regions
-    FABIO_io_leontief <- FABIO_io_leontief %>% 
-      dplyr::left_join(region_fabio[,c("id", "exio_id")], by = c("to_region" = "id")) %>% 
-      dplyr::ungroup() %>% 
-      dplyr::mutate(to_region = exio_id) %>% # recode FABIO to EXIO regions
-      dplyr::group_by(from_region, from_product, to_region, to_product) %>% 
-      dplyr::summarise(amount = sum(amount, na.rm = TRUE))
     
     # known issues with the filter below: region-product combos
     # where the region does not receive one product but another are also included
@@ -166,23 +162,6 @@ server <- function(input, output, session) {
       dplyr::collect()
     
     if(nrow(FABIO_final_demand) > 0){
-      # recode FABIO to EXIO regions
-      FABIO_final_demand <- FABIO_final_demand %>% 
-        dplyr::left_join(region_fabio[,c("id", "exio_id")], by = c("from_region" = "id")) %>% 
-        dplyr::ungroup() %>% 
-        dplyr::mutate(from_region = exio_id) %>% # recode FABIO to EXIO regions
-        dplyr::select(-exio_id) %>% 
-        dplyr::left_join(region_fabio[,c("id", "exio_id")], by = c("to_region" = "id")) %>% 
-        dplyr::ungroup() %>% 
-        dplyr::mutate(to_region = exio_id) %>% # recode FABIO to EXIO regions
-        dplyr::select(-exio_id) %>% 
-        dplyr::group_by(from_region, product, to_region) %>% 
-        dplyr::summarise(amount = sum(amount, na.rm = TRUE))
-      
-      # from_reg_product_rowsum <- FABIO_final_demand %>% 
-      #   dplyr::group_by(from_region, product) %>% 
-      #   dplyr::summarise(amount = sum(amount, na.rm = TRUE))
-      
       # 4. Footprints
       # comFP: multiply IO amount with final demand
       # and envFP: multiply with e
@@ -191,20 +170,33 @@ server <- function(input, output, session) {
                          by = c("to_region" = "from_region", "to_product" = "product"), 
                          suffix = c("_io", "_y")) %>% 
         dplyr::filter(!is.na(amount_io) &
-                        !is.na(amount_y)) %>% 
+                      !is.na(amount_y)) %>% 
         dplyr::select(from_region, from_product, to_region, to_product, to_region_y, amount_io, amount_y)
       
       result_fabio <- result_fabio %>% 
         dplyr::mutate(comFP = (amount_io * amount_y)) %>%
         dplyr::mutate(envFP = comFP * e) %>% 
         dplyr::ungroup() # we need this ungroup to be able to rbind the data afterwards
+      
+      result_fabio <- result_fabio %>% 
+        dplyr::left_join(region_fabio[,c("id", "exio_id")], by = c("to_region" = "id")) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(to_region = exio_id) %>% # recode FABIO to EXIO regions
+        dplyr::select(-exio_id) %>%
+        dplyr::left_join(region_fabio[,c("id", "exio_id")], by = c("to_region_y" = "id")) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(to_region_y = exio_id) %>% # recode FABIO to EXIO regions
+        dplyr::select(-exio_id) %>%
+        dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>%
+        dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
+        dplyr::ungroup()
     } else {
       result_fabio <- NULL
     }
     
     # EXIOBASE -----------------------------------------------------------------
     
-    progress$inc(1/n_steps, detail = "nonfood data")
+    progress$inc(1/n_steps, detail = "nonfood data & calculating footprints") # update progress
     
     # 2. get io-leontief
     EXIO_io_leontief <- io_leontief_tbl %>% 
@@ -237,18 +229,23 @@ server <- function(input, output, session) {
                          by = c("to_region" = "from_region", "to_product" = "product"), 
                          suffix = c("_io", "_y")) %>% 
         dplyr::filter(!is.na(amount_io) &
-                        !is.na(amount_y)) %>% 
+                      !is.na(amount_y)) %>% 
         dplyr::select(from_region, from_product, to_region, to_product, to_region_y, amount_io, amount_y)
       
       result_exio <- result_exio %>% 
         dplyr::mutate(comFP = (amount_io * amount_y)) %>%
         dplyr::mutate(envFP = comFP * e) %>% 
-        dplyr::ungroup() # we need this ungroup to be able to rbind the data afterwards
+        dplyr::ungroup() %>%  # we need this ungroup to be able to rbind the data afterwards
+        dplyr::select(from_region, from_product, to_region, to_product, to_region_y, envFP)
     } else {
       result_exio <- NULL
     }
     
-    progress$inc(1/n_steps, message = "Aggregating results", detail = "")
+    ############################################################################
+    # Aggregating results
+    ############################################################################
+    
+    progress$inc(1/n_steps, message = "Aggregating results", detail = "") # update progress
     
     results <- base::rbind(result_exio, result_fabio)
     
@@ -318,8 +315,12 @@ server <- function(input, output, session) {
                                                        "Food", "Nonfood"))) %>% 
       dplyr::mutate(node_name = sprintf("%s (%s)", product_agg_name, region_name))
     
-    # nodes --------------------------------------------------------------------
-    progress$inc(1/n_steps, message = "Preparing nodes", detail = "")
+    ############################################################################
+    # Preparing nodes and links for the sankey
+    ############################################################################
+    
+    # NODES --------------------------------------------------------------------
+    progress$inc(1/n_steps, message = "Preparing data for plotting", detail = "preparing nodes") # update progress
     
     ## start node
     nodes_1 <- data.frame(
@@ -394,8 +395,8 @@ server <- function(input, output, session) {
     step_production_product$index <- nodes$index[match(step_production_product$node_name, 
                                                        nodes$name)]
     
-    # links --------------------------------------------------------------------
-    progress$inc(1/n_steps, message = "Linking the nodes", detail = "")
+    # LINKS --------------------------------------------------------------------
+    progress$inc(1/n_steps, message = "Preparing data for plotting", detail = "linking the nodes") # update progress
     
     step1 <- step1 %>% 
       dplyr::mutate(
@@ -440,8 +441,7 @@ server <- function(input, output, session) {
       dplyr::group_by(target) %>% 
       dplyr::summarise(amount = sum(amount, na.rm = TRUE))
     
-    nodes_tmp <- nodes
-    
+    # NODES, again -------------------------------------------------------------
     nodes <- nodes %>% 
       dplyr::left_join(source_links, by = c("index" = "source")) %>% 
       dplyr::left_join(target_links, by = c("index" = "target"), suffix = c("", ".tgt")) %>%
@@ -475,7 +475,7 @@ server <- function(input, output, session) {
       label = sprintf("<b>%s</b><br>%.2f %% of total", links$product, links$amount/sum(links$amount)*100)
     )
     
-    progress$inc(1/n_steps, message = "Preparing plot", detail = "")
+    progress$inc(1/n_steps, message = "Preparing plot", detail = "") # update progress
     
     p <- plotly::plot_ly(
       type = "sankey",
@@ -511,7 +511,7 @@ server <- function(input, output, session) {
     # print out the time
     print(Sys.time() - time)
     
-    progress$inc(1/n_steps, detail = "... now plotting...")
+    progress$inc(1/n_steps, detail = "... now plotting...") # update progress
     
     p
   })
