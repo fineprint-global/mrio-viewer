@@ -4,3 +4,10 @@
   height:calc(100vh - 190px) !important;
   /* nav: 60+21; rest: 102 */
 }
+
+/* UI elements */
+span.irs-bar-edge,
+span.irs-bar {
+  border: none;
+  background: none;
+}

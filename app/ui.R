@@ -74,7 +74,7 @@ ui <- function(request) {
             selectizeInput(inputId = "env_factor",
                            label = "Environmental factor",
                            choices = c(env_factor_conc$name, "product unit"),
-                           selected = env_factor_conc[2,]$name)
+                           selected = env_factor_conc[1,]$name)
           ),
           column(
             width = 1,
