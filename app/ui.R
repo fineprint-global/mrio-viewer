@@ -39,7 +39,7 @@ ui <- function(request) {
           # ----------------------------------------------------------------
           column(
             width = 2,
-            offset = 1,
+            offset = 0,
             # here, we put the input elements
             selectizeInput(inputId = "from_region",
                            label = "From Region",
@@ -64,13 +64,13 @@ ui <- function(request) {
                         sep = "")
           ),
           column(
-            width = 1,
+            width = 2,
             selectizeInput(inputId = "allocation",
                            label = "Allocation",
                            choices = allocation_conc$name)
           ),
           column(
-            width = 1,
+            width = 2,
             selectizeInput(inputId = "env_factor",
                            label = "Environmental factor",
                            choices = c(env_factor_conc$name, "product unit"),
@@ -79,7 +79,7 @@ ui <- function(request) {
           column(
             width = 1,
             numericInput(inputId = "top_n",
-                         label = "n of regions to not aggregate",
+                         label = "# regions to not aggregate",
                          value = 5,
                          min = 1,
                          max = 49,
@@ -95,6 +95,13 @@ ui <- function(request) {
         # ----------------------------------------------------------------
         fluidRow(
           plotly::plotlyOutput(outputId = "sankey_plot")
+        ),
+        fluidRow(
+          tags$ul(class = "description clearfix",
+                  tags$li("from-region & from-product"),
+                  tags$li("(final) producing region"),
+                  tags$li("final product"),
+                  tags$li("consuming region"))
         )
       ),
       

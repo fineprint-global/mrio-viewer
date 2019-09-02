@@ -1,13 +1,64 @@
 /* Defines styles used in the shiny app. */
 
-#sankey_plot {
-  height:calc(100vh - 190px) !important;
-  /* nav: 60+21; rest: 102 */
-}
-
 /* UI elements */
 span.irs-bar-edge,
 span.irs-bar {
   border: none;
   background: none;
+}
+
+/* desciption for plot */
+ul.description {
+  list-style-type: none;
+  margin: 0;
+  background-color: #e8e8e8;
+  color: #333;
+  height: 2em;
+  /* margin-top: 10px; */
+  z-index: 9999;
+  position: absolute;
+  width: 100%;
+  margin-bottom: 0;
+  margin-top: -20px;
+}
+ul.description li {
+  display: block;
+  width: 25%;
+  float: left;
+  text-align: center;
+  height: 2em;
+  line-height: 2em;
+  font-style: italic;
+  font-weight: 500;
+}
+ul.description li:first-child {
+  padding-left: 5px;
+  text-align: left;
+}
+ul.description li:nth-child(2) {
+  padding-right: 6%;
+}
+ul.description li:nth-child(3) {
+  padding-left: 8%;
+}
+ul.description li:last-child {
+  padding-right: 10px;
+  text-align: right;
+}
+/* plot */
+#sankey_plot {
+  height:calc(100vh - 200px) !important;
+  /* nav: 60+21; ul.description 30-20; rest: 102 */
+}
+@media only screen and (min-width: 1116px) and (max-width: 1500px) {
+  #sankey_plot {
+    height:calc(100vh - 232px) !important;
+    /* nav: 60+21; ul.description 30; rest: 124 */
+  }
+}
+@media only screen and (max-width: 1115px) {
+  #sankey_plot {
+    height:calc(100vh - 242px) !important;
+    /* nav: 60+21; ul.description 30; rest: 144 */
+  }
 }
