@@ -54,6 +54,9 @@ year_range <- year_range[!(year_range %in% result)]
 
 rm(query, result)
 
+# change year range to start only at 1995
+year_range <- year_range[!(year_range < 1995)]
+
 # --------------------------------------------------------------
 # preparation --------------------------------------------------
 # --------------------------------------------------------------
