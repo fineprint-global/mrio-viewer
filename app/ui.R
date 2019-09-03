@@ -115,7 +115,69 @@ ui <- function(request) {
       ),
       
       ##################################################################
-      ### 4. About
+      ### 4. Map visualization
+      ##################################################################
+      tabPanel(
+        title = "Footprint map",
+        fluidRow(
+          # ----------------------------------------------------------------
+          # input elements -------------------------------------------------
+          # ----------------------------------------------------------------
+          column(
+            width = 2,
+            offset = 0,
+            # here, we put the input elements
+            selectizeInput(inputId = "from_region",
+                           label = "From Region",
+                           choices = region_fabio$name,
+                           selected = "Brazil")
+          ),
+          column(
+            width = 2,
+            selectizeInput(inputId = "from_product",
+                           label = "From Product",
+                           choices = product_fabio$name,
+                           selected = "Soyabeans")
+          ),
+          column(
+            width = 2,
+            sliderInput(inputId = "year", 
+                        label = "Year", 
+                        min = year_max_min$min,
+                        max = year_max_min$max,
+                        value = year_max_min$max,
+                        step = 1,
+                        sep = "")
+          ),
+          column(
+            width = 1,
+            selectizeInput(inputId = "allocation",
+                           label = "Allocation",
+                           choices = allocation_conc$name)
+          ),
+          column(
+            width = 2,
+            selectizeInput(inputId = "env_factor",
+                           label = "Environmental factor",
+                           choices = c(env_factor_conc$name, "product unit"),
+                           selected = env_factor_conc[1,]$name)
+          ),
+          column(
+            width = 1,
+            bookmarkButton(label = "Share")
+          )
+        ),
+        # ----------------------------------------------------------------
+        # visualization --------------------------------------------------
+        # ----------------------------------------------------------------
+        fluidRow(
+          uiOutput("map_title"),
+          leaflet::leafletOutput(outputId = "map_plot")
+        )
+      ),
+      
+      ##################################################################
+      ### 5. About
       ##################################################################
       tabPanel(
         title = "About",

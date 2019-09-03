@@ -50,6 +50,9 @@ ul.description li:last-child {
   height:calc(100vh - 200px) !important;
   /* nav: 60+21; ul.description 30-20; rest: 102 */
 }
+#map_plot {
+  height:calc(100vh - 190px) !important;
+}
 @media only screen and (min-width: 1116px) and (max-width: 1500px) {
   #sankey_plot {
     height:calc(100vh - 232px) !important;

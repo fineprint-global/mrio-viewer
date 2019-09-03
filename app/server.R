@@ -570,7 +570,93 @@ server <- function(input, output, session) {
   # })
   
   ##################################################################
-  ### 2. About
+  ### 2. Map
+  ##################################################################
+  
+  output$map_title <- shiny::renderUI({
+    req(input$sel_geo)
+    h2("footprint of ", input$from_region, " and ", input$from_product)
+  })
+  
+  output$map_plot <- leaflet::renderLeaflet({
+    leaflet::leaflet(options = leaflet::leafletOptions(zoomDelta = 0.25, zoomSnap = 0, crs = leaflet::leafletCRS("L.CRS.EPSG4326"))) %>% 
+      leaflet::setView(lng = -5, lat = 20, zoom = 1.75) %>% 
+      leaflet.extras::setMapWidgetStyle(style = list(background = "#ccccff"))
+  })
+  # this is needed because otherwise no map is ever drawn
+  # outputOptions(output, "consumption_map", suspendWhenHidden = FALSE)
+  
+  # leafletProxy for the map --------------------------------------------------------------------------
+  counter <- 0
+  observe({
+    ### Load low-detail shape file for world map
+    # world_shape = sf::st_as_sf(rnaturalearth::countries110) // the function call below is more efficient
+    world_shape <- rnaturalearth::ne_countries(type = 'countries', scale = 'small', returnclass = "sf")
+    
+    ### remove Antarctica
+    world_shape <- world_shape %>%
+      dplyr::filter(admin != "Antarctica")
+    
+    start <- Sys.time()
+    
+    counter <- counter + 1
+    
+    chart_data <- flowdet_2013 %>%
+      dplyr::filter(`destination` == !!geo_conc[geo_conc$name == input$sel_geo,]$code) %>% 
+      dplyr::group_by(source) %>%
+      dplyr::summarise(amount = sum(amount, na.rm = T)) %>%
+      dplyr::ungroup() %>%
+      dplyr::collect() %>%
+      dplyr::select(source, amount)
+    # GRL (Greenland) is in the data with amount = 0
+    
+    chart_data <- chart_data %>%
+      dplyr::right_join(., world_shape, by = c("source" = "gu_a3"))
+    
+    bins <- BAMMtools::getJenksBreaks(chart_data$amount, 6)
+    nacol <- "#FFFFFF"
+    # pal <- leaflet::colorBin(palette = "viridis", domain = chart_data$amount, bins = bins, reverse = TRUE, na.color = nacol)
+    pal <- leaflet::colorBin(c("#d8b2b2", "#800000"), domain = chart_data$amount, bins = bins, na.color = nacol)
+    
+    chart_data <- chart_data %>% sf::st_as_sf()
+    
+    chart_data$label <- sprintf("%s (%d)<br>%s %s", chart_data$name, 2013, format(round(as.numeric(chart_data$amount)), nsmall=0, big.mark=","), ifelse(is.na(chart_data$amount), "", "tonnes")) %>% lapply(HTML)
+    
+    print(paste0("Before proxy: ", Sys.time() - start))
+    
+    round_digits <- ifelse(bins[2]/1e3 < 100, 0, -2)
+    
+    proxy <- leaflet::leafletProxy("consumption_map", data = chart_data) %>% 
+      leaflet::addPolygons(
+        group = paste("countries", counter, sep=""),
+        weight = 0.5, #2
+        opacity = 1,
+        color = "white", # ch_country_profiles$color[ch_country_profiles$cat == "Consumption"],
+        dashArray = "",
+        fillColor = ~pal(amount),
+        fillOpacity = 1,
+        highlight = leaflet::highlightOptions(
+          weight = 2,
+          color = "#555",
+          fillOpacity = 0.8,
+          bringToFront = TRUE),
+        label = ~label,
+        labelOptions = leaflet::labelOptions(
+          style = list("font-weight" = "normal", padding = "3px 8px"),
+          textsize = "15px",
+          direction = "auto")
+      ) %>%
+      leaflet::clearGroup(paste("countries", (counter-1), sep="")) %>% # clear the previous country shapes
+      leaflet::clearControls() %>%                                     # clear the previous legend
+      leaflet::addLegend("bottomleft", pal = pal, values = ~amount,
+                         title = NULL,
+                         labFormat = leaflet::labelFormat(suffix = paste0(" ", "tonnes"), digits = round_digits, transform = divide_by_1k),
+                         opacity = 0.7
+      )
+  })
+  
+  ##################################################################
+  ### 3. About
   ##################################################################
   
   output$about_text <- shiny::renderText({
