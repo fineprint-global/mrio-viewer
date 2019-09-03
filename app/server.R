@@ -516,7 +516,7 @@ server <- function(input, output, session) {
     )
     
     progress$inc(1/n_steps, message = "Preparing plot", detail = "") # update progress
-    
+
     p <- plotly::plot_ly(
       type = "sankey",
       orientation = "h", # alternative: v
@@ -536,13 +536,17 @@ server <- function(input, output, session) {
       link = link_list
     ) %>%
       plotly::layout(
-        title = sprintf("%s-based allocation for %s from %s (%.0f) | %s footprint (total): %.2e ha", 
+        title = sprintf("%s-based allocation for %s from %s (%.0f) | %s footprint (total): %.2e %s", 
                         allocation_conc$name[allocation_conc$id == allocation], 
                         product_conc$name[product_conc$id == from_product], 
                         region_conc$name[region_conc$id == from_region], 
                         year,
                         env_factor,
-                        sum(total_footprint)),
+                        sum(total_footprint),
+                        if_else(env_factor %in% env_factor_conc$name,
+                                env_factor_unit_conc$name[env_factor_unit_conc$id == 
+                                                          env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1],
+                                "product units")),
         # paper_bgcolor = "green",
         xaxis = list(showgrid = F, zeroline = F, showticklabels = F),
         yaxis = list(showgrid = F, zeroline = F, showticklabels = F)
