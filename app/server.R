@@ -58,6 +58,8 @@ server <- function(input, output, session) {
     
     top_n <- input$top_n
     
+    agg_percent <- input$agg_percent
+    
     # # uncomment this in case you want to execute parts of the code manually     
     # from_region <- region_fabio$id[region_fabio$name=="Brazil"]
     # from_product <- product_fabio$id[product_fabio$name=="Soyabeans"]
@@ -65,6 +67,7 @@ server <- function(input, output, session) {
     # allocation <- allocation_conc$id[allocation_conc$name == "price"]
     # env_factor <- "biomass"
     # top_n <- 5
+    # agg_percent <- 0.01
     
     total_footprint <- 0
     
@@ -280,33 +283,55 @@ server <- function(input, output, session) {
       dplyr::group_by(to_region, to_product, to_region_y) %>% 
       dplyr::summarise(envFP = sum(envFP, na.rm = T))
     
+    # only aggregate if there is a agg_percent > 0 specified
+    if(agg_percent > 0){
+      step2 <- step2 %>% 
+        dplyr::ungroup() %>% 
+        dplyr::mutate(to_product = if_else((envFP / total_footprint) > agg_percent,
+                                           to_product,
+                                           if_else(to_product %in% product_fabio$id,
+                                                   product_other$food,
+                                                   product_other$nonfood))) %>% 
+        dplyr::group_by(to_region, to_product, to_region_y) %>% 
+        dplyr::summarise(envFP = sum(envFP, na.rm = T))
+    }
+    
     ## this is the third set of nodes: production country & top products
     step_production_product <- step2 %>% 
       dplyr::group_by(to_region, to_product) %>% 
       dplyr::rename(region = to_region, product = to_product) %>% 
       dplyr::summarise(envFP = sum(envFP, na.rm = T))
     
+    # for now I commented out the top_n command here
+    # this means that the user has the full control on how many nodes are displayed
+    # and there is 1 node per link
     top_spp <- step_production_product %>% 
       dplyr::ungroup() %>% 
-      dplyr::top_n(5, envFP)
+      dplyr::filter(product != product_other$food &
+                    product != product_other$nonfood) # %>% 
+      # dplyr::top_n(5, envFP)
+    
+    # we only do the top_n if there is no aggregate specified to avoid overwhelmed browsers
+    # plus the user does not get any info out of this setting otherwise because it's too much
+    if(agg_percent <= 0){
+      top_spp <- step_production_product %>% 
+        dplyr::ungroup() %>% 
+        dplyr::filter(product != product_other$food &
+                        product != product_other$nonfood) %>% 
+      dplyr::top_n(8, envFP)
+    }
     
     ### if a product + region - combo is now in the top, the name will remain the same, 
     ### otherwise it will be renamed to Food/Nonfood (Region)
     
-    # create two new product IDs representing food and nonfood
-    product_other <- list(
-      food = max(product_conc$id)+1L,
-      nonfood = max(product_conc$id)+2L
-    )
-
     # we add the product_type (food or nonfood) to the top_spp, too
     # because we need that info to determine if there is already a food for
     # that region that is displayed seperately, then we call the aggregate
     # "Other food", otherwise just "Food"
     top_spp <- top_spp %>% 
       dplyr::mutate(product_type = if_else(product %in% product_fabio$id, 
-                                   product_other$food, 
-                                   product_other$nonfood))
+                                           product_other$food, 
+                                           product_other$nonfood))
 
     # now we change the third step (production & product according to our new aggregate)
     step_production_product <- step_production_product %>% 
@@ -320,7 +345,7 @@ server <- function(input, output, session) {
       dplyr::rename(region_name = name) %>% 
       dplyr::left_join(product_conc[,c("id", "name", "product_group")], by = c("product_agg" = "id")) %>% 
       dplyr::rename(product_agg_name = name) %>% 
-      dplyr::mutate(product_agg_name = if_else(!is.na(product_agg_name), 
+      dplyr::mutate(product_agg_name = if_else(!is.na(product_agg_name) & !grepl("aggregate", product_agg_name), 
                                                product_agg_name,
                                                if_else(paste0(region, product_agg) %in% 
                                                          paste0(top_spp$region, top_spp$product_type),
@@ -460,13 +485,12 @@ server <- function(input, output, session) {
     # NODES, again -------------------------------------------------------------
     nodes <- nodes %>% 
       dplyr::left_join(source_links, by = c("index" = "source")) %>% 
-      dplyr::left_join(target_links, by = c("index" = "target"), suffix = c("", ".tgt")) %>%
-      dplyr::group_by(id) %>% 
+      dplyr::left_join(target_links, by = c("index" = "target"), suffix = c("", ".tgt")) %>% 
+      dplyr::group_by(id, step) %>% 
       dplyr::mutate(amount = max(amount, amount.tgt, na.rm = TRUE)) %>% 
       dplyr::ungroup() %>% 
       dplyr::select(-amount.tgt) %>% 
       dplyr::mutate(percent = amount / total_footprint * 100)
-      
     
     # SANKEY: NODES
     # create list of nodes

@@ -86,9 +86,25 @@ region_aggregated <- region_fabio %>%
 # here, we create product_fabio and _exio to be able to 
 # display the FABIO products to the user in the select and use the 
 # EXIOBASE products afterwards in the visualization
+
+# create two new product IDs representing food and nonfood
+# this will be used for aggregating very small product flows
+product_other <- list(
+  food = max(product_conc$id)+1L,
+  nonfood = max(product_conc$id)+2L
+)
+
 product_conc <- dplyr::tbl(pool, "product") %>% dplyr::collect()
-product_fabio <- product_conc %>% dplyr::slice(1:130)
-product_exio <- product_conc %>% dplyr::slice(131:nrow(product_conc))
+# get first 130 products (FABIO products) and add "Food (aggregate)"
+product_fabio <- product_conc %>% 
+  dplyr::slice(1:130) %>% 
+  dplyr::add_row(id = product_other$food, name = "Food (aggregate)")
+# get the rest of the products (EXIO products) and add "Nonfood (aggregate)"
+product_exio <- product_conc %>% 
+  dplyr::slice(131:nrow(product_conc)) %>% 
+  dplyr::add_row(id = product_other$nonfood, name = "Nonfood (aggregate)")
+# now combine the new product_fabio and _exio to get the updated product_conc
+product_conc <- rbind(product_fabio, product_exio)
 
 product_group_conc <- dplyr::tbl(pool, "product_group") %>% dplyr::collect()
 product_unit_conc <- dplyr::tbl(pool, "product_unit") %>% dplyr::collect()

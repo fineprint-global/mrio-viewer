@@ -64,7 +64,7 @@ ui <- function(request) {
                         sep = "")
           ),
           column(
-            width = 2,
+            width = 1,
             selectizeInput(inputId = "allocation",
                            label = "Allocation",
                            choices = allocation_conc$name)
@@ -84,6 +84,15 @@ ui <- function(request) {
                          min = 1,
                          max = 49,
                          step = 1)
+          ),
+          column(
+            width = 1,
+            numericInput(inputId = "agg_percent",
+                         label = "aggregate flows % smaller than",
+                         value = 0.03,
+                         min = 0,
+                         max = 1,
+                         step = 0.01)
           ),
           column(
             width = 1,
