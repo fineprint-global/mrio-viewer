@@ -155,4 +155,4 @@ In case there are issues with building and running the RShiny Docker from the di
 ```
 
 ## Acknowledgement
-This project gratefully acknowledges financial support from the ERC as part of the [FINEPRINT](https://www.fineprint.global/) project.
+This project has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation programme (grant agreement No. 725525).
