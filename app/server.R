@@ -292,12 +292,23 @@ server <- function(input, output, session) {
     
     ### if a product + region - combo is now in the top, the name will remain the same, 
     ### otherwise it will be renamed to Food/Nonfood (Region)
+    
     # create two new product IDs representing food and nonfood
     product_other <- list(
       food = max(product_conc$id)+1L,
       nonfood = max(product_conc$id)+2L
     )
-    
+
+    # we add the product_type (food or nonfood) to the top_spp, too
+    # because we need that info to determine if there is already a food for
+    # that region that is displayed seperately, then we call the aggregate
+    # "Other food", otherwise just "Food"
+    top_spp <- top_spp %>% 
+      dplyr::mutate(product_type = if_else(product %in% product_fabio$id, 
+                                   product_other$food, 
+                                   product_other$nonfood))
+
+    # now we change the third step (production & product according to our new aggregate)
     step_production_product <- step_production_product %>% 
       dplyr::mutate(product_agg = 
                       if_else(paste0(region, product) %in% paste0(top_spp$region, top_spp$product), 
@@ -307,12 +318,17 @@ server <- function(input, output, session) {
                                       product_other$nonfood))) %>%
       dplyr::left_join(region_conc[,c("id", "name", "iso3")], by = c("region" = "id")) %>% 
       dplyr::rename(region_name = name) %>% 
-      dplyr::left_join(product_conc[,c("id", "name")], by = c("product_agg" = "id")) %>% 
+      dplyr::left_join(product_conc[,c("id", "name", "product_group")], by = c("product_agg" = "id")) %>% 
       dplyr::rename(product_agg_name = name) %>% 
       dplyr::mutate(product_agg_name = if_else(!is.na(product_agg_name), 
                                                product_agg_name,
-                                               if_else(product_agg == product_other$food,
-                                                       "Food", "Nonfood"))) %>% 
+                                               if_else(paste0(region, product_agg) %in% 
+                                                         paste0(top_spp$region, top_spp$product_type),
+                                                       if_else(product_agg == product_other$food,
+                                                               "Other food", "Other nonfood"),
+                                                       if_else(product_agg == product_other$food,
+                                                          "Food", "Nonfood")
+                                                       ))) %>% 
       dplyr::mutate(node_name = sprintf("%s (%s)", product_agg_name, region_name))
     
     ############################################################################
