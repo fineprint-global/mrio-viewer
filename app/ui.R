@@ -8,6 +8,8 @@
 
 # Define UI
 ui <- function(request) {
+  options(spinner.color="#2c3e50")
+  
   tagList(
     ##################################################################
     ### 1. <HEAD> elements
@@ -103,7 +105,8 @@ ui <- function(request) {
         # visualization --------------------------------------------------
         # ----------------------------------------------------------------
         fluidRow(
-          plotly::plotlyOutput(outputId = "sankey_plot")
+          plotly::plotlyOutput(outputId = "sankey_plot") %>% 
+            shinycssloaders::withSpinner(size = 1.5)
         ),
         fluidRow(
           tags$ul(class = "description clearfix",

@@ -7,6 +7,10 @@ span.irs-bar {
   background: none;
 }
 
+span.irs-single {
+  background: #2c3e50;
+}
+
 /* desciption for plot */
 ul.description {
   list-style-type: none;

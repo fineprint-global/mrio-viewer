@@ -9,7 +9,8 @@ RUN apt-get update \
     RPostgreSQL \
     pool \
     RColorBrewer \
-    shinythemes
+    shinythemes \
+    shinycssloaders
 
 # Copy configuration files into the Docker image
 COPY shiny-server.conf  /etc/shiny-server/shiny-server.conf
