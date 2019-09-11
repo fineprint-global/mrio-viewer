@@ -2,7 +2,7 @@
 ### 1. Load packages
 ##################################################################
 
-# required packages
+# # install required packages if you do not have them already
 # install.packages(c("DBI", "RPostgreSQL", "countrycode", "tidyverse"))
 
 library(tidyverse)
@@ -13,7 +13,6 @@ library(tidyverse)
 
 # save the folder path
 folder_path <- "/mnt/nfs_fineprint/tmp/fabio/"
-# folder_path <- "db/data/" # temporarily using the data folder
 
 ## FILE TYPE
 file_type <- "rds"
@@ -27,6 +26,7 @@ if(file_type != "rds" &&
 }
 
 ## FILE FORMAT
+# here we define the file format to be used in the sprintf()-function to generate the actual file name
 # %i ... 4 digit year
 # %s ... character that is either ...
 #
@@ -60,8 +60,10 @@ file_names <- data.frame(
   Z = c(paste0("Z_", allocation_type)) # similar structure to L.rds
 )
 
-# other crucial information
-year_range_orig <- c(2013:2008)
+## other crucial information
+
+# define the year range of data to insert into the database
+year_range_orig <- c(2013:2013)
 
 ##################################################################
 ### 3. Create the database connection
@@ -74,6 +76,7 @@ if(exists("db") && RPostgres::dbIsValid(db)){
 }
 
 # connect to the database
+# Sys.getenv() gets the environment variables stored in .Renviron
 db <-DBI::dbConnect(drv = RPostgres::Postgres(),
                     host = Sys.getenv("db_host"),
                     port = Sys.getenv("db_port"),

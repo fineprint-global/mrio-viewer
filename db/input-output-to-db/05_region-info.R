@@ -42,8 +42,6 @@ if(nrow(region) == 0){
 
 # EXIOBASE data for region table -----------------------------------------------
 
-region <- RPostgres::dbReadTable(db, "region")
-
 if(nrow(region) <= 192){ # this means that only FABIO regions are in the table so far
   
   insert_data <- data.frame(
@@ -58,6 +56,7 @@ if(nrow(region) <= 192){ # this means that only FABIO regions are in the table s
 }
 
 # region_cluster table ---------------------------------------------------------
+# we use two main clusters, FABIO and EXIOBASE
 
 region_cluster <- RPostgres::dbReadTable(db, "region_cluster")
 
@@ -74,6 +73,7 @@ if(nrow(region_cluster) == 0){
 }
 
 # region_cluster_region table --------------------------------------------------
+# now we populate the FABIO and EXIOBASE clusters
 
 region_cluster_region <- RPostgres::dbReadTable(db, "region_cluster_region")
 
@@ -96,6 +96,8 @@ if(nrow(region_cluster_region) == 0){
   region_cluster_region <- RPostgres::dbReadTable(db, "region_cluster_region")
 }
 
+# now add the information about region_cluster to the region so we get 
+# region_fabio and region_exio that are used for further processing
 region_cluster_tbl <- dplyr::tbl(db, "region_cluster")
 region_cluster_region_tbl <- dplyr::tbl(db, "region_cluster_region")
 
@@ -120,12 +122,12 @@ add_region_aggregate <- function(db,
                                  region_aggregate_id, 
                                  region_in_aggregate_ids){
   
-  # 1. check if the db is valid
+  ## 1. check if the db is valid
   if(!DBI::dbIsValid(db)){
     base::stop("Database connection is invalid.")
   }
   
-  # 1. check the args with the ids from the db to make sure all are region ids
+  ## 2. check the args with the ids from the db to make sure all are region ids
   ids <- dplyr::tbl(db, "region") %>% dplyr::select(id) %>% dplyr::collect()
   
   if(!(region_aggregate_id %in% ids$id)){
@@ -136,30 +138,32 @@ add_region_aggregate <- function(db,
                 in the list of possible ids from the database.")
   }
   
-  # before we insert the data, we check for data already in the db
+  ## 3. before we insert the data, we check for data already in the db
   reg_agg <- dplyr::tbl(db, "region_aggregate") %>% 
     dplyr::filter(region_aggregate == region_aggregate_id) %>% 
     dplyr::select(region_in_aggregate) %>% 
     dplyr::collect()
-  
+  # we only insert the ids that are not yet in the db
   region_in_aggregate_ids <- region_in_aggregate_ids[!(region_in_aggregate_ids %in%
                                                        reg_agg$region_in_aggregate)]
-  
+  # return if there are no new ids to insert
   if(length(region_in_aggregate_ids) == 0){ return() }
   
-  # create the insert_data
+  ## 4. create the insert_data
   insert_data <- data.frame(
     region_aggregate = region_aggregate_id,
     region_in_aggregate = region_in_aggregate_ids
   )
   
-  # insert data into the db, if it doesn't exist yet
+  ## 5. insert data into the db, that doesn't exist yet
   DBI::dbAppendTable(db, name = "region_aggregate", value = insert_data)
 }
 
 # add_region_aggregate(db, region_aggregate_id = 193, region_in_aggregate_ids = c(9))
 
 # match FABIO and EXIOBASE regions in region_aggregate -------------------------
+# e.g. the FABIO region Austria will be matched with EXIO region Austria
+#      but FABIO regions Albania, Andorra and others with EXIO region RoW Europe
 for(reg_exio_id in region_exio$id){
   reg_exio_name <- region_exio$name[region_exio$id == reg_exio_id]
   

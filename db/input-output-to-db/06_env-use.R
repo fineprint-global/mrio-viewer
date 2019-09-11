@@ -13,9 +13,12 @@ env_factor_unit <- RPostgres::dbReadTable(db, "env_factor_unit")
 
 if(nrow(env_factor_unit) == 0){
   
-  # TODO: ha/tonnes, tonnes/tonnes --> X.rds durch total prod of this year
+  # X.rds durch total prod of this year
   insert_data <- data.frame(
-    name = c("ha", "tonnes") # ha for landuse, tonnes for biomass
+    # ha for landuse, tonnes for biomass
+    # we divide by product unit because this is how we store the information
+    # we divide the total landuse or biomass by the total production
+    name = c("ha/product unit", "tonnes/product unit")
   )
   
   DBI::dbAppendTable(db, name = "env_factor_unit", value = insert_data)
@@ -46,9 +49,9 @@ if(nrow(env_factor) == 0){
 product <- product_fabio
 region <- region_fabio
 
-# ----------------------------------------------------------------
-# get years ------------------------------------------------------
-# ----------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# get years that are not yet done ----------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Check for which years we already have data for
 # care: in case you stopped an operation to the db or changed the original data
@@ -76,23 +79,26 @@ rm(query, result)
 # combine both to only collect data once
 year_range <- c(year_range_biomass, year_range_landuse[!(year_range_landuse %in% year_range_biomass)])
 
-# ----------------------------------------------------------------
-# get data and insert --------------------------------------------
-# ----------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# get data and insert ----------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 start <- Sys.time()
 
 for(year in year_range){
-  # year <- 2013 # temporarily just 2013
-  
   print(paste("Year", year, "/", year_range[length(year_range)]))
   
-  data <- read_file_function(sprintf(file_format, year, "E"))
+  data <- read_file_function(sprintf(file_format, year, "E")) %>% 
+    # change the naming of Côte d'Ivoire to reflect its special character
+    # to be able to match it later
+    dplyr::mutate(Country = str_replace(Country, 
+                                        "C\xf4te d'Ivoire", 
+                                        region_fabio$name[78]))
 
   # get environmental use variables - make sure they match the format used in your data
   env_factor$name_data <- paste0(toupper(substr(env_factor$name, 1, 1)),
                                  substr(env_factor$name, 2, nchar(env_factor$name)))
-
+  
   # prepare environmental data -> unselect unnecessary cols, add ids for region and product
   env_data <- data %>%
     # filter so we only keep variables 
@@ -100,16 +106,16 @@ for(year in year_range){
                   abs(round(Biomass, digits = 2)) >= 0.01) %>%
     dplyr::select(-Country.Code, -Item.Code, -Com.Code, -Group, -ID) %>%
     # REGION: join table, add ID, remove unnecessary cols
-    dplyr::left_join(region, by = c("Country" = "name"), suffix = c("", ".region")) %>%
+    dplyr::left_join(region[,c("id", "name")], by = c("Country" = "name"), suffix = c("", ".region")) %>%
     dplyr::rename("from_region" = "id") %>%
-    dplyr::select(-Country, -iso3) %>%
+    dplyr::select(-Country) %>%
     # PRODUCT: join table, add ID, remove unnecessary cols
     dplyr::left_join(product, by = c("Item" = "name"), suffix = c("", ".product")) %>%
     dplyr::rename("from_product" = "id") %>%
     dplyr::select(-Item, -product_unit, -product_group, -other_id) %>%
     # add the year
     dplyr::mutate(year = year)
-
+  
   rm(data)
   
   # get total production data
@@ -155,19 +161,6 @@ for(year in year_range){
       dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
       dplyr::select(from_region, from_product, env_factor, year, amount)
     
-    # append env_intensity with the amount for the environmental factor currently in loop
-    RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
-  }
-  
-  # loop through env_intensity_vars, for us this is landuse and biomass
-  for(i in c(1:length(row.names(env_factor)))){
-    insert_data <- data %>%
-      dplyr::mutate(env_factor = env_factor[i,]$id) %>%
-      dplyr::rename("amount" = env_factor[i,]$name_data) %>%
-      # now we create amount as an environmental pressure by dividing it by total_production
-      dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
-      dplyr::select(from_region, from_product, env_factor, year, amount)
-
     # append env_intensity with the amount for the environmental factor currently in loop
     RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
   }

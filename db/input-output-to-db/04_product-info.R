@@ -8,12 +8,14 @@ print("04_product-info.R")
 product_info <- read.csv2("../data/items_fabio.csv") %>% 
   dplyr::select(Com.Code, Item, Unit, Group) %>% #, Com.Group)
   # change the unit for Livestock from 1000 Head to head
+  # this will be changed automatically in the next version of FABIO
   dplyr::mutate(Unit = as.character(Unit)) %>% 
   dplyr::mutate(Unit = if_else(Unit == "1000 Head", "head", Unit))
 
 # product_group table --------------------------------------------------
 product_group <- RPostgres::dbReadTable(db, "product_group")
 
+# if no information exists yet in this table we populate it
 if(nrow(product_group) == 0){
   
   insert_data <- data.frame(
