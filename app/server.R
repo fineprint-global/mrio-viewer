@@ -16,6 +16,66 @@ server <- function(input, output, session) {
     return(p)
   }
   
+  # calculation functions
+  calc_env_intensity <- function(env_factor, from_region, from_product, year, allocation){
+    
+    if(env_factor == "product unit"){
+      e <- 1
+    } else {
+      # 1. prepare extension, get environmental intensity
+      env_intensity <- env_intensity_tbl %>% 
+        dplyr::filter(from_region == !!from_region,
+                      from_product == !!from_product,
+                      year == !!year,
+                      env_factor == !!env_factor_conc$id[env_factor_conc$name == env_factor]) %>% 
+        dplyr::collect()
+      
+      e <- env_intensity$amount
+      
+      # is null? this means that our product is not a primary crop
+      if(is.null(e)){
+        
+        # 1. pre-filter the env_intensity_tbl because we'll join it below
+        env_intensity_tbl_filtered <- env_intensity_tbl %>% 
+          dplyr::filter(year == !!year,
+                        env_factor == !!env_factor_conc$id[env_factor_conc$name == env_factor])
+        
+        # 2. get IO leontief for this product because we need to aggregate
+        #    the column of the primary crops (for each: amount * e)
+        #    to get the environmental factor for our product.
+        #    This is why we join the env_intensity_tbl_filtered, to get e
+        e_io_leontief_env_int <- io_leontief_tbl %>% 
+          # get all from_regions and from_products that feed into our region&product combo
+          dplyr::filter(to_region == !!from_region,
+                        to_product == !!from_product,
+                        year == !!year,
+                        allocation == !!allocation) %>% 
+          # we are only interested in the regions and products
+          dplyr::select(from_region, from_product, amount) %>% 
+          # get the environmental impact for those products
+          dplyr::left_join(env_intensity_tbl_filtered, 
+                           by = c("from_region" = "from_region",
+                                  "from_product" = "from_product"),
+                           suffix = c("", ".env")) %>% 
+          dplyr::filter(!is.na(amount),
+                        !is.na(amount.env),
+                        amount > 0,
+                        amount.env > 0) %>% 
+          # calculate the environmental impact for our product
+          # = (amount that feeds into it * amount.env)
+          dplyr::mutate(e = amount * amount.env) %>% 
+          dplyr::select(from_region, from_product, e) %>% 
+          # here, just summarise because we are only interested in the sum of e
+          dplyr::summarise(e = sum(e, na.rm = TRUE)) %>% 
+          dplyr::collect()
+        
+        e <- e_io_leontief_env_int$e
+      }
+    }
+    
+    return(e)
+  }
+  
   # Trigger bookmarking with either button
   # observeEvent(input$bookmark, {
   #   session$doBookmark()
@@ -75,64 +135,15 @@ server <- function(input, output, session) {
     # Calculate footprints
     ############################################################################
     
-    if(env_factor == "product unit"){
-      e <- 1
-    } else {
-      # 1. prepare extension, get environmental intensity
-      env_intensity <- env_intensity_tbl %>% 
-        dplyr::filter(from_region == !!from_region,
-                      from_product == !!from_product,
-                      year == !!year,
-                      env_factor == !!env_factor_conc$id[env_factor_conc$name == env_factor]) %>% 
-        dplyr::collect()
-      
-      e <- env_intensity$amount
-      
-      # is null? this means that our product is not a primary crop
-      if(is.null(e)){
-        
-        # 1. pre-filter the env_intensity_tbl because we'll join it below
-        env_intensity_tbl_filtered <- env_intensity_tbl %>% 
-          dplyr::filter(year == !!year,
-                        env_factor == !!env_factor_conc$id[env_factor_conc$name == env_factor])
-        
-        # 2. get IO leontief for this product because we need to aggregate
-        #    the column of the primary crops (for each: amount * e)
-        #    to get the environmental factor for our product.
-        #    This is why we join the env_intensity_tbl_filtered, to get e
-        e_io_leontief_env_int <- io_leontief_tbl %>% 
-          # get all from_regions and from_products that feed into our region&product combo
-          dplyr::filter(to_region == !!from_region,
-                        to_product == !!from_product,
-                        year == !!year,
-                        allocation == !!allocation) %>% 
-          # we are only interested in the regions and products
-          dplyr::select(from_region, from_product, amount) %>% 
-          # get the environmental impact for those products
-          dplyr::left_join(env_intensity_tbl_filtered, 
-                           by = c("from_region" = "from_region",
-                                  "from_product" = "from_product"),
-                           suffix = c("", ".env")) %>% 
-          dplyr::filter(!is.na(amount),
-                        !is.na(amount.env)) %>% 
-          # calculate the environmental impact for our product
-          # = (amount that feeds into it * amount.env)
-          dplyr::mutate(e = amount * amount.env) %>% 
-          dplyr::select(from_region, from_product, e) %>% 
-          # here, just summarise because we are only interested in the sum of e
-          dplyr::summarise(e = sum(e, na.rm = TRUE)) %>% 
-          dplyr::collect()
-        
-        if(is.na(e_io_leontief_env_int$e)){
-          return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f). You can select 'product unit' as env. factor.",
-                                        allocation_conc$name[allocation_conc$id == allocation], 
-                                        product_conc$name[product_conc$id == from_product], 
-                                        region_conc$name[region_conc$id == from_region], 
-                                        year)))
-        }
-        
-        e <- e_io_leontief_env_int$e
-      }
+    # get/calculate environmental intensity from database
+    e <- calc_env_intensity(env_factor, from_region, from_product, year, allocation)
+    
+    if(is.na(e)){
+      return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f). You can select 'product unit' as env. factor.",
+                                    allocation_conc$name[allocation_conc$id == allocation], 
+                                    product_conc$name[product_conc$id == from_product], 
+                                    region_conc$name[region_conc$id == from_region], 
+                                    year)))
     }
     
     # FABIO --------------------------------------------------------------------
@@ -155,12 +166,12 @@ server <- function(input, output, session) {
     # where the region does not receive one product but another are also included
     
     # 3. get final demand for FOOD
-    FABIO_final_demand <- final_demand_tbl %>% 
+    FABIO_final_demand <- final_demand_tbl %>%
       dplyr::filter(from_region %in% !!new_from_regions,
                     product %in% !!new_products,
                     year == !!year,
                     element %in% !!element_type$id[element_type$name.type == "Food"]) %>%
-      dplyr::group_by(from_region, to_region, product) %>% 
+      dplyr::group_by(from_region, to_region, product) %>%
       dplyr::summarise(amount = sum(amount, na.rm = TRUE)) %>%
       dplyr::collect()
     
@@ -550,7 +561,8 @@ server <- function(input, output, session) {
         # paper_bgcolor = "green",
         xaxis = list(showgrid = F, zeroline = F, showticklabels = F),
         yaxis = list(showgrid = F, zeroline = F, showticklabels = F)
-      )
+      ) %>%
+      plotly::config(displaylogo = FALSE)
     
     # print out the time
     print(Sys.time() - time)
