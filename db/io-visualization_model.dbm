@@ -269,8 +269,8 @@ or nonfood sector (households, state, etc.)]]></comment>
 </textbox>
 
 <textbox name="allocation_desc" font-size="9">
-	<position x="1340" y="540"/>
-	<comment><![CDATA[mass/price]]></comment>
+	<position x="1400" y="500"/>
+	<comment><![CDATA[mass/value]]></comment>
 </textbox>
 
 <relationship name="many_region_cluster_has_many_region" type="relnn"
