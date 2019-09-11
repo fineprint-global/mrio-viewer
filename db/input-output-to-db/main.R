@@ -21,6 +21,10 @@
 
 # setwd("db/input-output-to-db")
 
+# getting the starting time
+script_start <- Sys.time()
+print(paste("Starting main.R at", script_start))
+
 ################################################################################
 ### 01-03_setup.r
 ################################################################################
@@ -94,3 +98,10 @@ print(Sys.time()-start)
 
 # finally, disconnect the DB
 DBI::dbDisconnect(db)
+
+# print current date and time
+script_end <- Sys.time()
+print(paste("Finished main.R at", script_end))
+
+# print time difference between script start and end
+print(script_end-script_start)
