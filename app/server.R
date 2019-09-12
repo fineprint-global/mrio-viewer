@@ -491,7 +491,9 @@ server <- function(input, output, session) {
     # SANKEY: NODES
     # create list of nodes
     node_list <- list(
-      label = sprintf("%s (%.0f%%)", nodes$name, nodes$percent),
+      label = if_else(nodes$percent > 0.5,
+                      sprintf("%s (%.0f%%)", nodes$name, nodes$percent),
+                      sprintf("%s (<0.5%%)", nodes$name)),
       color = nodes$color,
       pad = 15,
       thickness = 30,
