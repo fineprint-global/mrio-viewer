@@ -16,7 +16,11 @@ server <- function(input, output, session) {
     return(p)
   }
   
-  # calculation functions
+  ##############################################################################
+  ### 0. Funcations for calculations
+  ##############################################################################
+  
+  ## calculate environmental intensity
   calc_env_intensity <- function(env_factor, from_region, from_product, year, allocation){
     
     if(env_factor == "product unit"){
@@ -74,6 +78,82 @@ server <- function(input, output, session) {
     }
     
     return(e)
+  }
+  
+  ## calculate footprints for either Food (FABIO IO-Leontief and final demand) 
+  ##                          or Nonfood products (EXIO IO-L and final demand)
+  calc_footprint <- function(from_region, from_product, year, allocation, e, type = c("Food", "Nonfood")){
+    type <- match.arg(type)
+    
+    reg_cluster <- switch(type,
+                   Food = region_fabio,
+                   Nonfood = region_exio)
+    
+    # 1. get io-leontief
+    io_leontief <- io_leontief_tbl %>% 
+      dplyr::filter(from_region == !!from_region,
+                    from_product == !!from_product,
+                    year == !!year,
+                    to_region %in% !!reg_cluster$id,
+                    allocation == !!allocation) %>% 
+      dplyr::collect()
+    
+    new_from_regions <- unique(io_leontief$to_region)
+    new_products <- unique(io_leontief$to_product)
+    
+    # known issues with the filter below: region-product combos
+    # where the region does not receive one product but another are also included
+    
+    # 2. get final demand
+    final_demand <- final_demand_tbl %>%
+      dplyr::filter(from_region %in% !!new_from_regions,
+                    product %in% !!new_products,
+                    year == !!year,
+                    element %in% !!element_type$id[element_type$name.type == type]) %>%
+      dplyr::group_by(from_region, to_region, product) %>%
+      dplyr::summarise(amount = sum(amount, na.rm = TRUE)) %>%
+      dplyr::collect()
+    
+    if(nrow(final_demand) > 0){
+      # 3. footprints
+      # comFP: multiply IO amount with final demand
+      # and envFP: multiply with e
+      result <- io_leontief %>% 
+        dplyr::left_join(final_demand, 
+                         by = c("to_region" = "from_region", "to_product" = "product"), 
+                         suffix = c("_io", "_y")) %>% 
+        dplyr::filter(!is.na(amount_io) &
+                        !is.na(amount_y)) %>% 
+        dplyr::select(from_region, from_product, to_region, to_product, to_region_y, amount_io, amount_y)
+      
+      result <- result %>% 
+        dplyr::mutate(comFP = (amount_io * amount_y)) %>%
+        dplyr::mutate(envFP = comFP * e) %>% 
+        dplyr::ungroup() # we need this ungroup to be able to rbind the data afterwards
+      
+      # for type Food, which included FABIO regions up until now
+      # we now aggregate those regions to match the EXIOBASE regions
+      if(type == "Food"){
+        result <- result %>% 
+        dplyr::left_join(reg_cluster[,c("id", "exio_id")], by = c("to_region" = "id")) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(to_region = exio_id) %>% # recode FABIO to EXIO regions
+        dplyr::select(-exio_id) %>%
+        dplyr::left_join(reg_cluster[,c("id", "exio_id")], by = c("to_region_y" = "id")) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(to_region_y = exio_id) %>% # recode FABIO to EXIO regions
+        dplyr::select(-exio_id) %>%
+        dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>%
+        dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
+        dplyr::ungroup() # we need this ungroup to be able to rbind the data afterwards
+      } else {
+        result <- result %>% 
+          dplyr::select(from_region, from_product, to_region, to_product, to_region_y, envFP)
+      }
+    } else {
+      result <- NULL
+    }
+    return(result)
   }
   
   # Trigger bookmarking with either button
@@ -147,113 +227,14 @@ server <- function(input, output, session) {
     }
     
     # FABIO --------------------------------------------------------------------
-    
     progress$inc(1/n_steps, detail = "food data & calculating footprints") # update progress
     
-    # 2. get io-leontief
-    FABIO_io_leontief <- io_leontief_tbl %>% 
-      dplyr::filter(from_region == !!from_region,
-                    from_product == !!from_product,
-                    year == !!year,
-                    to_region %in% !!region_fabio$id,
-                    allocation == !!allocation) %>% 
-      dplyr::collect()
-    
-    new_from_regions <- unique(FABIO_io_leontief$to_region)
-    new_products <- unique(FABIO_io_leontief$to_product)
-    
-    # known issues with the filter below: region-product combos
-    # where the region does not receive one product but another are also included
-    
-    # 3. get final demand for FOOD
-    FABIO_final_demand <- final_demand_tbl %>%
-      dplyr::filter(from_region %in% !!new_from_regions,
-                    product %in% !!new_products,
-                    year == !!year,
-                    element %in% !!element_type$id[element_type$name.type == "Food"]) %>%
-      dplyr::group_by(from_region, to_region, product) %>%
-      dplyr::summarise(amount = sum(amount, na.rm = TRUE)) %>%
-      dplyr::collect()
-    
-    if(nrow(FABIO_final_demand) > 0){
-      # 4. Footprints
-      # comFP: multiply IO amount with final demand
-      # and envFP: multiply with e
-      result_fabio <- FABIO_io_leontief %>% 
-        dplyr::left_join(FABIO_final_demand, 
-                         by = c("to_region" = "from_region", "to_product" = "product"), 
-                         suffix = c("_io", "_y")) %>% 
-        dplyr::filter(!is.na(amount_io) &
-                      !is.na(amount_y)) %>% 
-        dplyr::select(from_region, from_product, to_region, to_product, to_region_y, amount_io, amount_y)
-      
-      result_fabio <- result_fabio %>% 
-        dplyr::mutate(comFP = (amount_io * amount_y)) %>%
-        dplyr::mutate(envFP = comFP * e) %>% 
-        dplyr::ungroup() # we need this ungroup to be able to rbind the data afterwards
-      
-      result_fabio <- result_fabio %>% 
-        dplyr::left_join(region_fabio[,c("id", "exio_id")], by = c("to_region" = "id")) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(to_region = exio_id) %>% # recode FABIO to EXIO regions
-        dplyr::select(-exio_id) %>%
-        dplyr::left_join(region_fabio[,c("id", "exio_id")], by = c("to_region_y" = "id")) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(to_region_y = exio_id) %>% # recode FABIO to EXIO regions
-        dplyr::select(-exio_id) %>%
-        dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>%
-        dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
-        dplyr::ungroup()
-    } else {
-      result_fabio <- NULL
-    }
+    result_fabio <- calc_footprint(from_region, from_product, year, allocation, e, type = "Food")
     
     # EXIOBASE -----------------------------------------------------------------
-    
     progress$inc(1/n_steps, detail = "nonfood data & calculating footprints") # update progress
     
-    # 2. get io-leontief
-    EXIO_io_leontief <- io_leontief_tbl %>% 
-      dplyr::filter(from_region == !!from_region,
-                    from_product == !!from_product,
-                    year == !!year,
-                    to_region %in% !!region_exio$id) %>% 
-      dplyr::collect()
-    
-    new_from_regions <- unique(EXIO_io_leontief$to_region)
-    new_products <- unique(EXIO_io_leontief$to_product)
-    
-    # known issues with the filter below: region-product combos
-    # where the region does not receive one product but another are also included
-    
-    # 3. get final demand for NONFOOD
-    EXIO_final_demand <- final_demand_tbl %>% 
-      dplyr::filter(from_region %in% !!new_from_regions,
-                    product %in% !!new_products,
-                    year == !!year,
-                    element %in% !!element_type$id[element_type$name.type == "Nonfood"]) %>%
-      dplyr::collect()
-    
-    if(nrow(EXIO_final_demand) > 0){
-      # 4. Footprints
-      # comFP: multiply IO amount with final demand
-      # and envFP: multiply with e
-      result_exio <- EXIO_io_leontief %>% 
-        dplyr::left_join(EXIO_final_demand, 
-                         by = c("to_region" = "from_region", "to_product" = "product"), 
-                         suffix = c("_io", "_y")) %>% 
-        dplyr::filter(!is.na(amount_io) &
-                      !is.na(amount_y)) %>% 
-        dplyr::select(from_region, from_product, to_region, to_product, to_region_y, amount_io, amount_y)
-      
-      result_exio <- result_exio %>% 
-        dplyr::mutate(comFP = (amount_io * amount_y)) %>%
-        dplyr::mutate(envFP = comFP * e) %>% 
-        dplyr::ungroup() %>%  # we need this ungroup to be able to rbind the data afterwards
-        dplyr::select(from_region, from_product, to_region, to_product, to_region_y, envFP)
-    } else {
-      result_exio <- NULL
-    }
+    result_exio <- calc_footprint(from_region, from_product, year, allocation, e, type = "Nonfood")
     
     ############################################################################
     # Aggregating results
@@ -438,6 +419,10 @@ server <- function(input, output, session) {
     nodes_production_product <- nodes_production_product %>% 
       dplyr::select(-region_name)
     
+    nodes$name[nodes$step == 0] <- sprintf("%s (%s)", 
+                                           product_fabio$name[product_fabio$id==from_product], 
+                                           region_fabio$name[region_fabio$id==from_region])
+    
     nodes <- rbind(nodes, nodes_production_product)
     
     nodes$index <- c(0:(nrow(nodes)-1))
@@ -547,18 +532,18 @@ server <- function(input, output, session) {
       link = link_list
     ) %>%
       plotly::layout(
-        title = sprintf("%s-based allocation for %s from %s (%.0f) | %s footprint (total): %.2e %s", 
-                        allocation_conc$name[allocation_conc$id == allocation], 
-                        product_conc$name[product_conc$id == from_product], 
-                        region_conc$name[region_conc$id == from_region], 
-                        year,
+        title = list(
+          text = sprintf("total %s footprint: %.2e %s (%s-based allocation, %.0f)", 
                         env_factor,
                         sum(total_footprint),
                         if_else(env_factor %in% env_factor_conc$name,
                                 env_factor_unit_conc$name[env_factor_unit_conc$id == 
-                                                          env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1],
-                                "product units")),
-        # paper_bgcolor = "green",
+                                                            env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1],
+                                "product units"),
+                        allocation_conc$name[allocation_conc$id == allocation], 
+                        year),
+          x = 0.035
+        ),
         xaxis = list(showgrid = F, zeroline = F, showticklabels = F),
         yaxis = list(showgrid = F, zeroline = F, showticklabels = F)
       ) %>%
