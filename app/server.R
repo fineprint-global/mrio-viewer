@@ -466,7 +466,7 @@ server <- function(input, output, session) {
         source = nodes[nodes$step == 1,]$index[match(region, nodes[nodes$step == 1,]$id)],
         target = index
       ) %>% 
-      dplyr::mutate(color = if_else(from_product %in% product_fabio$id, "rgba(38, 166, 91, .3)", "rgba(149, 165, 166, .3)")) %>% 
+      dplyr::mutate(color = if_else(product %in% product_fabio$id, "rgba(38, 166, 91, .3)", "rgba(149, 165, 166, .3)")) %>% 
       dplyr::left_join(product_conc[,c("id", "name", "product_group")], by = c("product" = "id"), suffix = c("", "_product")) %>% 
       dplyr::rename(product_id = product, product = name, amount = envFP) %>% 
       dplyr::ungroup() %>% 
