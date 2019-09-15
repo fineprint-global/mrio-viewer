@@ -52,7 +52,7 @@ ui <- function(request) {
             width = 2,
             selectizeInput(inputId = "from_product",
                            label = "From Product",
-                           choices = product_fabio$name,
+                           choices = product_dropdown,
                            selected = "Soyabeans")
           ),
           column(

@@ -110,6 +110,20 @@ product_conc <- rbind(product_fabio, product_exio)
 product_group_conc <- dplyr::tbl(pool, "product_group") %>% dplyr::collect()
 product_unit_conc <- dplyr::tbl(pool, "product_unit") %>% dplyr::collect()
 
+## create list for input-dropdown
+product_dropdown <- list()
+# group this list by product group
+for(product_group in product_group_conc$id){
+  product_group_name <- product_group_conc$name[product_group_conc$id == product_group]
+  
+  product_dropdown[product_group_name] <- list(
+    # we use [1:130,] to slice away the "Food (aggregate)"-product type
+    # that is only used for aggregating, not filtering
+    product_fabio[1:130,]$name[product_fabio[1:130,]$product_group == product_group] %>% 
+      base::sort() # sort alphabetically within groups
+  )
+}
+
 # env_intensity ----------------------------------------------------------------
 env_intensity_tbl <- dplyr::tbl(pool, "env_intensity")
 env_factor_conc <- dplyr::tbl(pool, "env_factor") %>% dplyr::collect()
