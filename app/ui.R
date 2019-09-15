@@ -45,8 +45,11 @@ ui <- function(request) {
             # here, we put the input elements
             selectizeInput(inputId = "from_region",
                            label = "From Region",
-                           choices = region_fabio$name,
-                           selected = "Brazil")
+                           choices = list(
+                             Region = region_fabio$name,
+                             Cluster = continents$name.cluster
+                           ),
+                           selected = "North America")
           ),
           column(
             width = 2,

@@ -55,6 +55,7 @@ region_cluster_tbl <- dplyr::tbl(pool, "region_cluster")
 region_cluster_region_tbl <- dplyr::tbl(pool, "region_cluster_region")
 region_aggregate <- dplyr::tbl(pool, "region_aggregate")
 
+# make region distiction between FABIO and EXIOBASE
 region_tbl <- dplyr::tbl(pool, "region") %>% 
   dplyr::full_join(region_cluster_region_tbl, by = c("id" = "id_region")) %>% 
   dplyr::left_join(region_cluster_tbl, 
@@ -62,6 +63,21 @@ region_tbl <- dplyr::tbl(pool, "region") %>%
                    suffix = c("",".cluster")) %>% 
   dplyr::filter(name.cluster %in% c(name_fabio, name_exio)) %>%
   dplyr::select(-geometry, -id_region_cluster)
+
+region_continent <- dplyr::tbl(pool, "region") %>% 
+  dplyr::full_join(region_cluster_region_tbl, by = c("id" = "id_region")) %>% 
+  dplyr::full_join(region_cluster_tbl, 
+                   by = c("id_region_cluster" = "id"), 
+                   suffix = c("",".cluster")) %>% 
+  dplyr::filter(!(name.cluster %in% c(name_fabio, name_exio))) %>%
+  dplyr::select(-geometry) %>% 
+  dplyr::collect()
+
+continents <- region_continent %>% 
+  dplyr::select(name.cluster) %>% 
+  dplyr::distinct() %>% 
+  dplyr::arrange(name.cluster) %>% 
+  dplyr::collect()
 
 region_conc <- region_tbl %>% dplyr::collect()
 

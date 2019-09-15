@@ -135,17 +135,17 @@ server <- function(input, output, session) {
       # we now aggregate those regions to match the EXIOBASE regions
       if(type == "Food"){
         result <- result %>% 
-        dplyr::left_join(reg_cluster[,c("id", "exio_id")], by = c("to_region" = "id")) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(to_region = exio_id) %>% # recode FABIO to EXIO regions
-        dplyr::select(-exio_id) %>%
-        dplyr::left_join(reg_cluster[,c("id", "exio_id")], by = c("to_region_y" = "id")) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(to_region_y = exio_id) %>% # recode FABIO to EXIO regions
-        dplyr::select(-exio_id) %>%
-        dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>%
-        dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
-        dplyr::ungroup() # we need this ungroup to be able to rbind the data afterwards
+          dplyr::left_join(reg_cluster[,c("id", "exio_id")], by = c("to_region" = "id")) %>%
+          dplyr::ungroup() %>%
+          dplyr::mutate(to_region = if_else(is.na(exio_id), 192L, exio_id)) %>% # recode FABIO to EXIO regions, except for RoW (id=192)
+          dplyr::select(-exio_id) %>%
+          dplyr::left_join(reg_cluster[,c("id", "exio_id")], by = c("to_region_y" = "id")) %>%
+          dplyr::ungroup() %>%
+          dplyr::mutate(to_region_y = if_else(is.na(exio_id), 192L, exio_id)) %>% # recode FABIO to EXIO regions, except for RoW (id=192)
+          dplyr::select(-exio_id) %>%
+          dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>%
+          dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
+          dplyr::ungroup() # we need this ungroup to be able to rbind the data afterwards
       } else {
         result <- result %>% 
           dplyr::select(from_region, from_product, to_region, to_product, to_region_y, envFP)
@@ -154,6 +154,25 @@ server <- function(input, output, session) {
       result <- NULL
     }
     return(result)
+  }
+  
+  calc_results_for_region <- function(from_region, from_product, year, allocation, env_factor, progress, n_steps){
+    # get/calculate environmental intensity from database
+    e <- calc_env_intensity(env_factor, from_region, from_product, year, allocation)
+    
+    if(is.na(e)){
+      return()
+    }
+    
+    # FABIO --------------------------------------------------------------------
+    result_fabio <- calc_footprint(from_region, from_product, year, allocation, e, type = "Food")
+    
+    # EXIOBASE -----------------------------------------------------------------
+    result_exio <- calc_footprint(from_region, from_product, year, allocation, e, type = "Nonfood")
+    
+    results <- base::rbind(result_exio, result_fabio)
+    
+    return(results)
   }
   
   # Trigger bookmarking with either button
@@ -185,8 +204,25 @@ server <- function(input, output, session) {
     progress$set(message = "Fetching data from the database", 
                  detail = "environmental impact data", 
                  value = 0)
-    # define the number of steps for the progress bar to reach 100%
-    n_steps <- 7
+    
+    # is input-region just one region or a cluster?
+    if(input$from_region %in% continents$name.cluster){ # is cluster
+      cluster <- input$from_region
+      from_regions <- (region_continent %>% 
+        dplyr::filter(name.cluster == cluster) %>% 
+        dplyr::select(id) %>% 
+        dplyr::collect())$id
+      
+      # define the number of steps for the progress bar to reach 100%
+      n_steps <- 5 + length(from_regions) # 5 "normal" steps + 1 per region
+      
+      cluster_mode <- TRUE
+    } else{ # just one region
+      # define the number of steps for the progress bar to reach 100%
+      n_steps <- 6
+      
+      cluster_mode <- FALSE
+    }
     
     # get user inputs
     from_region <- region_fabio$id[region_fabio$name==input$from_region]
@@ -203,8 +239,8 @@ server <- function(input, output, session) {
     # # uncomment this in case you want to execute parts of the code manually     
     # from_region <- region_fabio$id[region_fabio$name=="Brazil"]
     # from_product <- product_fabio$id[product_fabio$name=="Soyabeans"]
-    # year <- 2010
-    # allocation <- allocation_conc$id[allocation_conc$name == "price"]
+    # year <- 2013
+    # allocation <- allocation_conc$id[allocation_conc$name == "value"]
     # env_factor <- "biomass"
     # top_n <- 5
     # agg_percent <- 0.01
@@ -215,26 +251,73 @@ server <- function(input, output, session) {
     # Calculate footprints
     ############################################################################
     
-    # get/calculate environmental intensity from database
-    e <- calc_env_intensity(env_factor, from_region, from_product, year, allocation)
+    if(cluster_mode){
+      results <- NULL
+      
+      for(from_region in from_regions){
+        
+        progress$inc(1/n_steps, detail = sprintf("region %.0f/%.0f, calculating footprints", 
+                                                 match(from_region, from_regions), # get position in list for current region
+                                                 length(from_regions))) # update progress
+        
+        result_region <- calc_results_for_region(from_region, from_product, year, allocation, env_factor, progress, n_steps)
+        
+        if(!is.null(result_region)){
+          if(is.null(results)){
+            results <- result_region
+          } else {
+            results <- base::rbind(results, result_region)
+          }
+        }
+      }
+      
+      # redefine region_conc for the current context
+      region_conc <- region_continent %>% 
+        dplyr::select(id_region_cluster, name.cluster) %>% 
+        dplyr::distinct() %>% 
+        dplyr::rename(id = id_region_cluster,
+                      name = name.cluster)
+      
+      # make sure results are not NULL
+      if(!is.null(results)){
+        # aggregate regions
+        # results <- results_to_region_cluster(results)
+        # results$from_region <- region_continent$id_region_cluster[region_continent]
+        results <- results %>% 
+          dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>% 
+          dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
+          dplyr::ungroup() %>% 
+          # mutate from_region to cluster
+          dplyr::left_join(region_continent[,c("id", "id_region_cluster")], by = c("from_region" = "id")) %>% 
+          dplyr::mutate(from_region = id_region_cluster) %>% 
+          dplyr::select(-id_region_cluster) %>% 
+          # mutate to_region to cluster
+          dplyr::left_join(region_continent[,c("id", "id_region_cluster")], by = c("to_region" = "id")) %>% 
+          dplyr::mutate(to_region = id_region_cluster) %>% 
+          dplyr::select(-id_region_cluster) %>% 
+          # mutate to_region_y to cluster
+          dplyr::left_join(region_continent[,c("id", "id_region_cluster")], by = c("to_region_y" = "id")) %>% 
+          dplyr::mutate(to_region_y = id_region_cluster) %>% 
+          dplyr::select(-id_region_cluster) %>%
+          # now we summarize everything by cluster
+          dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>% 
+          dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
+          dplyr::ungroup()
+      }
+      
+    } else {
+      progress$inc(1/n_steps, detail = "food and nonfood data & calculating footprints") # update progress
+      
+      results <- calc_results_for_region(from_region, from_product, year, allocation, env_factor, progress, n_steps)
+    }
     
-    if(is.na(e)){
+    if(is.null(results)){
       return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f). You can select 'product unit' as env. factor.",
                                     allocation_conc$name[allocation_conc$id == allocation], 
                                     product_conc$name[product_conc$id == from_product], 
-                                    region_conc$name[region_conc$id == from_region], 
+                                    input$from_region, 
                                     year)))
     }
-    
-    # FABIO --------------------------------------------------------------------
-    progress$inc(1/n_steps, detail = "food data & calculating footprints") # update progress
-    
-    result_fabio <- calc_footprint(from_region, from_product, year, allocation, e, type = "Food")
-    
-    # EXIOBASE -----------------------------------------------------------------
-    progress$inc(1/n_steps, detail = "nonfood data & calculating footprints") # update progress
-    
-    result_exio <- calc_footprint(from_region, from_product, year, allocation, e, type = "Nonfood")
     
     ############################################################################
     # Aggregating results
@@ -242,28 +325,32 @@ server <- function(input, output, session) {
     
     progress$inc(1/n_steps, message = "Aggregating results", detail = "") # update progress
     
-    results <- base::rbind(result_exio, result_fabio)
-    
     # Now: let's aggregate
     # we only have one from_region and one from_product
     # we take the top 5 (or top_n if user input) to_regions
     # we take the top 5 (or top_n if user input) to_regions_y
     
-    top_to_reg <- results %>% 
-      dplyr::group_by(to_region) %>% 
-      dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
-      dplyr::top_n(top_n, envFP)
-    
-    top_to_reg_y <- results %>% 
-      dplyr::group_by(to_region_y) %>% 
-      dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
-      dplyr::top_n(top_n, envFP)
-    
-    agg <- results %>%
-      dplyr::mutate(to_region = if_else(to_region %in% top_to_reg$to_region, to_region, 192L)) %>% 
-      dplyr::mutate(to_region_y = if_else(to_region_y %in% top_to_reg_y$to_region_y, to_region_y, 192L)) %>% 
-      dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>% 
-      dplyr::summarise(envFP = sum(envFP, na.rm = T))
+    if(!cluster_mode){
+      top_to_reg <- results %>% 
+        dplyr::group_by(to_region) %>% 
+        dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
+        dplyr::top_n(top_n, envFP)
+      
+      top_to_reg_y <- results %>% 
+        dplyr::group_by(to_region_y) %>% 
+        dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
+        dplyr::top_n(top_n, envFP)
+      
+      agg <- results %>%
+        dplyr::mutate(to_region = if_else(to_region %in% top_to_reg$to_region, to_region, 192L)) %>% 
+        dplyr::mutate(to_region_y = if_else(to_region_y %in% top_to_reg_y$to_region_y, to_region_y, 192L)) %>% 
+        dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>% 
+        dplyr::summarise(envFP = sum(envFP, na.rm = T))
+      
+      rm(top_to_reg, top_to_reg_y)
+    } else {
+      agg <- results
+    }
     
     step1 <- agg %>% 
       dplyr::group_by(from_region, from_product, to_region) %>% 
@@ -333,7 +420,7 @@ server <- function(input, output, session) {
                               if_else(product %in% product_fabio$id, 
                                       product_other$food,
                                       product_other$nonfood))) %>%
-      dplyr::left_join(region_conc[,c("id", "name", "iso3")], by = c("region" = "id")) %>% 
+      dplyr::left_join(region_conc[,c("id", "name")], by = c("region" = "id")) %>% 
       dplyr::rename(region_name = name) %>% 
       dplyr::left_join(product_conc[,c("id", "name", "product_group")], by = c("product_agg" = "id")) %>% 
       dplyr::rename(product_agg_name = name) %>% 
@@ -368,13 +455,13 @@ server <- function(input, output, session) {
     ## these product are produced in the production country 
     ### different variable name is used because it is treated differently
     nodes_production_product <- step_production_product %>% 
-      dplyr::group_by(region, iso3, product_agg, node_name, region_name) %>% 
+      dplyr::group_by(region, product_agg, node_name, region_name) %>% 
       dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
       dplyr::mutate(step = 2) %>% 
       dplyr::mutate(id = sprintf("%.0f_%.0f", region, product_agg)) %>% 
       dplyr::rename(name = node_name, region_id = region) %>% 
       dplyr::ungroup() %>% 
-      dplyr::select(id, step, name, iso3, region_name, region_id)
+      dplyr::select(id, step, name, region_name, region_id)
     
     ## final consumption of product in:
     nodes_3 <- data.frame(
@@ -385,7 +472,7 @@ server <- function(input, output, session) {
     nodes <- rbind(nodes_1, nodes_2, nodes_3)
     rm(nodes_1, nodes_2, nodes_3)
     nodes <- nodes %>% 
-      dplyr::left_join(region_conc[,c("id", "name", "iso3")], by = c("id" = "id")) %>% 
+      dplyr::left_join(region_conc[,c("id", "name")], by = c("id" = "id")) %>% 
       dplyr::mutate(region_id = id) 
       # we keep this extra column because the id is something different for
       # nodes_production_product
@@ -421,7 +508,7 @@ server <- function(input, output, session) {
     
     nodes$name[nodes$step == 0] <- sprintf("%s (%s)", 
                                            product_fabio$name[product_fabio$id==from_product], 
-                                           region_fabio$name[region_fabio$id==from_region])
+                                           input$from_region)
     
     nodes <- rbind(nodes, nodes_production_product)
     
@@ -498,7 +585,7 @@ server <- function(input, output, session) {
       pad = 15,
       thickness = 30,
       line = list(
-        #color = colors$nodes[5],
+        #color = nodes$color,
         width = 0 # 0 width because it doesn't look good
       )
     )
