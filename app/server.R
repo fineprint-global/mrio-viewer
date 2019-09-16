@@ -597,7 +597,7 @@ server <- function(input, output, session) {
       target = links$target,
       value = links$amount,
       color = links$color,
-      label = sprintf("<b>%s</b><br>%.2f %% of total", links$product, links$amount/sum(links$amount)*100)
+      label = sprintf("<b>%s</b><br>%.2f %% of total", links$product, links$amount/total_footprint*100)
     )
     
     progress$inc(1/n_steps, message = "Preparing plot", detail = "") # update progress
@@ -605,8 +605,13 @@ server <- function(input, output, session) {
     p <- plotly::plot_ly(
       type = "sankey",
       orientation = "h", # alternative: v
-      #valueformat = ".0f",
-      valuesuffix = " (land footprint)",
+      # valueformat = ".0f",
+      valuesuffix = if_else(env_factor %in% env_factor_conc$name,
+                            sprintf(" (%s %s footprint)",
+                                    gsub("/product unit", "", env_factor_unit_conc$name[env_factor_unit_conc$id == 
+                                                                                          env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1]),
+                                    env_factor),
+                            "product units"),
       # iterations = 0,
       
       arrangement = "snap", # default: "snap"
@@ -626,8 +631,8 @@ server <- function(input, output, session) {
                         env_factor,
                         sum(total_footprint),
                         if_else(env_factor %in% env_factor_conc$name,
-                                env_factor_unit_conc$name[env_factor_unit_conc$id == 
-                                                            env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1],
+                                gsub("/product unit", "", env_factor_unit_conc$name[env_factor_unit_conc$id == 
+                                                            env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1]),
                                 "product units"),
                         allocation_conc$name[allocation_conc$id == allocation], 
                         year),
