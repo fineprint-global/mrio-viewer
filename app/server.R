@@ -516,8 +516,8 @@ server <- function(input, output, session) {
     
     # now we store the information about the index in step_production_product
     # to make matching easier
-    step_production_product$index <- nodes$index[match(step_production_product$node_name, 
-                                                       nodes$name)]
+    step_production_product$index <- nodes[nodes$step > 0,]$index[match(step_production_product$node_name, 
+                                                                        nodes[nodes$step > 0,]$name)]
     
     # LINKS --------------------------------------------------------------------
     progress$inc(1/n_steps, message = "Preparing data for plotting", detail = "linking the nodes") # update progress
