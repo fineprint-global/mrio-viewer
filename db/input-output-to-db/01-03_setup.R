@@ -50,6 +50,9 @@ file_format_subfolder <- paste0(folder_path, "%s/%i_%s.", file_type)
 
 ## DIFFERENT FILE NAMES
 allocation_type <- c("mass", "price") # this is needed to read files in our case
+# there is a different allocation type for the output because the term "value" is
+# preferred over "price", but the files are still saved with "price"
+allocation_type_output <- c("mass", "value")
 
 file_names <- data.frame(
   io_leontief = c(paste0("L_", allocation_type)),

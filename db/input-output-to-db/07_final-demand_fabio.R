@@ -10,7 +10,8 @@ print("07_final-demand.R")
 
 y_info <- data.frame(
   element = c("Food", "OtherUses", "StockVariation", "Balancing"),
-  type = c("Food", "-none-", "-none-", "-none-")
+  type = c("Food", "-none-", "-none-", "-none-"),
+  stringsAsFactors = FALSE
 )
 
 # type table --------------------------------------------------
@@ -19,7 +20,7 @@ type <- RPostgres::dbReadTable(db, "type")
 if(nrow(type) == 0){
   
   insert_data <- data.frame(
-    name = unique(y_info$type, "Nonfood")
+    name = unique(c(y_info$type, "Nonfood"))
   )
   
   DBI::dbAppendTable(db, name = "type", value = insert_data)

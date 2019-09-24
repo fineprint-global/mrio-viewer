@@ -17,7 +17,7 @@ allocation <- RPostgres::dbReadTable(db, "allocation")
 
 if(nrow(allocation) == 0){
   insert_data <- data.frame(
-    name = allocation_type
+    name = allocation_type_output
   )
   
   DBI::dbAppendTable(db, name = "allocation", value = insert_data)
