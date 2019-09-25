@@ -49,7 +49,7 @@ ui <- function(request) {
             offset = 0,
             # here, we put the input elements
             selectizeInput(inputId = "from_region",
-                           label = "From Region",
+                           label = "Region of origin",
                            choices = list(
                              Region = region_fabio$name,
                              Cluster = continents$name.cluster
@@ -59,7 +59,7 @@ ui <- function(request) {
           column(
             width = 2,
             selectizeInput(inputId = "from_product",
-                           label = "From Product",
+                           label = "Product of origin",
                            choices = product_dropdown,
                            selected = "Soyabeans")
           ),
