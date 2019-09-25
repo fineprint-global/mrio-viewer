@@ -98,11 +98,11 @@ ui <- function(request) {
           column(
             width = 1,
             numericInput(inputId = "agg_percent",
-                         label = "aggregate flows % smaller than",
-                         value = 0.03,
+                         label = "aggregate flows smaller than [%]",
+                         value = 3,
                          min = 0,
-                         max = 1,
-                         step = 0.01)
+                         max = 100,
+                         step = 1)
           ),
           column(
             width = 1,

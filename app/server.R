@@ -238,7 +238,7 @@ server <- function(input, output, session) {
     
     top_n <- input$top_n
     
-    agg_percent <- input$agg_percent
+    agg_percent <- input$agg_percent/100
     
     # # uncomment this in case you want to execute parts of the code manually     
     # from_region <- region_fabio$id[region_fabio$name=="Brazil"]
@@ -247,7 +247,7 @@ server <- function(input, output, session) {
     # allocation <- allocation_conc$id[allocation_conc$name == "value"]
     # env_factor <- "biomass"
     # top_n <- 5
-    # agg_percent <- 0.01
+    # agg_percent <- 1
     
     total_footprint <- 0
     
