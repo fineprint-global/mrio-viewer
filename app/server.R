@@ -213,6 +213,10 @@ server <- function(input, output, session) {
         dplyr::select(id) %>% 
         dplyr::collect())$id
       
+      # only take regions in FABIO because there is no 
+      # FROM product from an EXIO region
+      from_regions <- from_regions[from_regions %in% region_fabio$id]
+      
       # define the number of steps for the progress bar to reach 100%
       n_steps <- 5 + length(from_regions) # 5 "normal" steps + 1 per region
       
@@ -659,19 +663,4 @@ server <- function(input, output, session) {
   #   input$year <- state$input$year
   #   
   # })
-  
-  ##################################################################
-  ### 2. About
-  ##################################################################
-  
-  output$about_text <- shiny::renderText({
-    "<strong>Lorem ipsum</strong> dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
-  })
-  
-  output$about_licence_text <- shiny::renderText({
-    "This project gratefully acknowledges financial support from the ERC as part 
-    of the <a href='https://www.fineprint.global/' target='_blank'>FINEPRINT</a> 
-    project."
-  })
-  
 }

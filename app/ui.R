@@ -23,7 +23,7 @@ ui <- function(request) {
     ##################################################################
     navbarPage(
       # Application title
-      title = "IO Visualization",
+      title = "FABIO Viewer",
       selected = "Sankey",
       # inverse = TRUE,
       collapsible = TRUE,
@@ -49,7 +49,7 @@ ui <- function(request) {
                              Region = region_fabio$name,
                              Cluster = continents$name.cluster
                            ),
-                           selected = "North America")
+                           selected = "Brazil")
           ),
           column(
             width = 2,
@@ -126,12 +126,9 @@ ui <- function(request) {
       tabPanel(
         title = "About",
         fluidRow(
-          column( width = 12,
-                  h1("About"),
-                  # we use uiOutput for our renderText because otherwise HTML is not rendered  
-                  uiOutput(outputId = "about_text"),
-                  h1("Licence"),
-                  uiOutput(outputId = "about_licence_text")
+          column( width = 6,
+                  offset = 3,
+                  includeMarkdown("about.md")
           )
         )
       )
