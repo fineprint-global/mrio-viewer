@@ -30,6 +30,11 @@ ui <- function(request) {
       # theme = "bootstrap.css",
       theme = shinythemes::shinytheme("flatly"),
       
+      # add GitHub repository link with GitHub logo on the right side of navbar
+      tags$script(HTML("var header = $('.navbar > .container-fluid > .navbar-collapse.collapse');
+                       header.append('<div style=\"float:right\"><a href=\"https://github.com/fineprint-global/io-visualization\" target=\"_blank\"><img src=\"img/github-light.png\" style=\"float:right;height:41px;padding-top:17px;\"></a></div>');")
+      ),
+      
       ##################################################################
       ### 3. Sankey visualization
       ##################################################################

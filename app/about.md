@@ -6,15 +6,15 @@ This Input-Output Visualization Tool was developed within the <a href="https://f
 2. As a sample implementation, the <a href="https://github.com/fineprint-global/fabio-hybrid" target="_blank">hybrid FABIO model</a> was used to create this **FABIO Viewer**, which means it provides an easy way to get an overview of hybrid FABIO's capabilities.
 3. Its implementation using Docker containers allows to be used and further developed by anyone without a need to install dependencies, no matter the operating system.
 
-## Licence for ...
+## Licence for
 
-### ... Visualizations created using this tool
+### – Visualizations created using this tool
 
 Please use the following reference disclaimer when citing visualizations created using this tool (**replace** *Soyabeans*, *Brazil* and *2013* with the appropriate values for your use case):
 
-**WU Vienna (2019): Soyabeans from Brazil (2013). Visualizations based upon the hybrid FABIO model, v1.0. Vienna University of Economics and Business. Online available at: fineprint.global/fabio-viewer** <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">(licenced under CC BY 4.0)</a>
+**WU Vienna (2019): Soyabeans from Brazil (2013). Visualizations based upon the hybrid FABIO model, v1.0. Vienna University of Economics and Business. Online available at: fineprint.global/fabio-viewer** (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">licenced under CC BY 4.0</a>)
 
-### ... Code & Data
+### – Code & Data
 
 All data sets and R scripts are available to the research community under the **GNU General Public License (GPL-v3)**. We hope that openness, transparency and sharing of code contributes to further advancements and invite researchers to test and scrutinize our codes and results.
 
