@@ -485,23 +485,12 @@ server <- function(input, output, session) {
     n_cols <- length(unique(nodes$name))
     
     ## generate colors and make sure that regions with the same name have the same color
-    if(n_cols < 12){ # maximum number of colors in default palettes
-      colors <- RColorBrewer::brewer.pal(n_cols, "Set3")
-      # now we get the colors
-      reg_colors <- data.frame(
-        # we have this subset here for the special case of 2 regions
-        # as otherwise there would be an error as RColorBrewer returns at least 3 colors
-        color = colors[1:n_cols], 
-        region = unique(nodes$name)
-      )
-      rm(colors)
-    } else {
-      # now we get the colors
-      reg_colors <- data.frame(
-        color = colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(n_cols),
-        region = unique(nodes$name)
-      )
-    }
+    reg_colors <- data.frame(
+      color = viridis::viridis_pal(alpha = .8)(n_cols), # 80% opacity
+      region = unique(nodes$name) %>% sort()
+      # sort region names to avoid ordering by appearance (would mean that countries closer in the list have similar colors)
+    )
+    rm(n_cols)
     
     nodes$color <- reg_colors$color[match(nodes$name, reg_colors$region)]
     
@@ -526,12 +515,18 @@ server <- function(input, output, session) {
     # LINKS --------------------------------------------------------------------
     progress$inc(1/n_steps, message = "Preparing data for plotting", detail = "linking the nodes") # update progress
     
+    link_cols <- viridis::viridis_pal(alpha = .3, direction = -1, begin = 0, end = .7)(2)
+    # [1] "#43BF714D" "#4401544D"
+    
+    color_link_food <- link_cols[1]
+    color_link_nonfood <- link_cols[2]
+    
     step1 <- step1 %>% 
       dplyr::mutate(
         source = nodes[nodes$step == 0,]$index[match(from_region, nodes[nodes$step == 0,]$id)],
         target = nodes[nodes$step == 1,]$index[match(to_region, nodes[nodes$step == 1,]$id)]
       ) %>% 
-      dplyr::mutate(color = if_else(from_product %in% product_fabio$id, "rgba(38, 166, 91, .3)", "rgba(149, 165, 166, .3)")) %>% 
+      dplyr::mutate(color = if_else(from_product %in% product_fabio$id, color_link_food, color_link_nonfood)) %>% 
       dplyr::left_join(product_conc[,c("id", "name", "product_group")], by = c("from_product" = "id"), suffix = c("", "_product")) %>% 
       dplyr::rename(product = name, amount = envFP) %>% 
       dplyr::ungroup() %>% 
@@ -542,7 +537,7 @@ server <- function(input, output, session) {
         source = nodes[nodes$step == 1,]$index[match(region, nodes[nodes$step == 1,]$id)],
         target = index
       ) %>% 
-      dplyr::mutate(color = if_else(product %in% product_fabio$id, "rgba(38, 166, 91, .3)", "rgba(149, 165, 166, .3)")) %>% 
+      dplyr::mutate(color = if_else(product %in% product_fabio$id, color_link_food, color_link_nonfood)) %>% 
       dplyr::left_join(product_conc[,c("id", "name", "product_group")], by = c("product" = "id"), suffix = c("", "_product")) %>% 
       dplyr::rename(product_id = product, product = name, amount = envFP) %>% 
       dplyr::ungroup() %>% 
@@ -553,7 +548,7 @@ server <- function(input, output, session) {
         source = step_production_product$index[match(paste0(to_region, to_product), paste0(step_production_product$region,step_production_product$product))],
         target = nodes[nodes$step == 3,]$index[match(to_region_y, nodes[nodes$step == 3,]$id)]
       ) %>% 
-      dplyr::mutate(color = if_else(to_product %in% product_fabio$id, "rgba(38, 166, 91, .3)", "rgba(149, 165, 166, .3)")) %>%
+      dplyr::mutate(color = if_else(to_product %in% product_fabio$id, color_link_food, color_link_nonfood)) %>%
       dplyr::left_join(product_conc[,c("id", "name", "product_group")], by = c("to_product" = "id"), suffix = c("", "_product")) %>% 
       dplyr::rename(product = name, amount = envFP) %>% 
       dplyr::ungroup() %>% 
@@ -605,7 +600,7 @@ server <- function(input, output, session) {
     )
     
     progress$inc(1/n_steps, message = "Preparing plot", detail = "") # update progress
-
+    
     p <- plotly::plot_ly(
       type = "sankey",
       orientation = "h", # alternative: v
