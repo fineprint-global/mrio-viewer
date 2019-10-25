@@ -117,6 +117,10 @@ ui <- function(request) {
             shinycssloaders::withSpinner(size = 1.5)
         ),
         fluidRow(
+          tags$ul(class = "flow-legend clearfix",
+                  # style = "position: absolute; bottom: 30px; list-style-type: none;", # "#43BF714D" "#4401544D"
+                  tags$li(HTML("<span>&nbsp;</span> food")),
+                  tags$li(HTML("<span>&nbsp;</span> nonfood"))),
           tags$ul(class = "description clearfix",
                   tags$li("from-region & from-product"),
                   tags$li("(final) producing region"),

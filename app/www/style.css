@@ -11,6 +11,26 @@ span.irs-single {
   background: #2c3e50;
 }
 
+/* legend for flows */
+ul.flow-legend {
+  position: absolute; 
+  bottom: 2.5em; 
+  margin-left: 5px;
+  list-style-type: none;
+}
+ul.flow-legend > li > span {
+  display: block; 
+  float: left; 
+  width: 1.5em; 
+  margin-right: 5px;
+}
+ul.flow-legend > li:nth-of-type(1) > span {
+  background-color: #43BF714D; 
+}
+ul.flow-legend > li:nth-of-type(2) > span {
+  background-color: #4401544D; 
+}
+
 /* desciption for plot */
 ul.description {
   list-style-type: none;
@@ -49,6 +69,7 @@ ul.description li:last-child {
   padding-right: 10px;
   text-align: right;
 }
+
 /* plot */
 #sankey_plot {
   height:calc(100vh - 200px) !important;
