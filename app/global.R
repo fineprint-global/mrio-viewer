@@ -162,3 +162,6 @@ element_type <- element_conc %>% dplyr::left_join(type_conc, by = c("type" = "id
 
 print("global.R took ...")
 print(Sys.time()-start)
+
+# allow bookmarking (necessary to allow saving the state of the app via URL)
+enableBookmarking(store = "url")

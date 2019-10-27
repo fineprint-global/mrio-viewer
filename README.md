@@ -107,9 +107,8 @@ The folders to take care of are the [app](app/) folder and the [docker-rshiny](d
 ##### 3.1 `app` folder
 Before you dive into this, if you are new to RShiny, you may want to check out this [tutorial](https://shiny.rstudio.com/tutorial/).
 
-In our example, the `app` folder is divided into 4 main files:
+In our example, the `app` folder is divided into 3 main files:
 
-- `app.R`: you should not need to add anything there, this just brings all three other files together
 - `global.R`: this will be executed *once* for every worker process, not for every user, so this is where you specify database connections and perform other setup-related tasks
 - `ui.R`: you specify the user interface here. `output` elements (e.g. `plotlyOutput()`) are defined here and respective `render` functions (e.g. `renderPlotly({ ... })`) for those are performed in the `server.R`. If you want to add new visualizations or other elements, define them here.
 - `server.R`: any new visualizations defined in the `ui.R` should be implemented in the `server.R`, this is where you collect your data, bring it into the correct format and then define the output (e.g. for `plotly`).
@@ -149,6 +148,8 @@ RUN apt-get update \
 ## Troubleshooting
 
 - Make sure you have all dependencies (packages etc.) installed, you may want to check out the Dockerfile in `docker-rshiny/` for any packages necessary for the app to run.
+
+If the notes above or the section below do not help, please create an [issue](https://github.com/fineprint-global/io-visualization/issues).
 
 ### Windows-Issues with RShiny Docker
 In case there are issues with building and running the R Shiny Docker from the directory (especially in Windows, file permissions tend to get messed up, and then the container is constantly restarting, sometimes with the error: `standard_init_linux.go:207: exec user process caused "no such file or directory"`), you can alternatively use the docker image from Docker Hub. For this, you need to replace the build context with the Docker Hub image like below:

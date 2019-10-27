@@ -1,6 +1,7 @@
 ### server.R
 
 ## STRUCTURE
+# 0. Functions for calculations
 # 1. Sankey visualization
 # 2. About
 
@@ -17,7 +18,7 @@ server <- function(input, output, session) {
   }
   
   ##############################################################################
-  ### 0. Funcations for calculations
+  ### 0. Functions for calculations
   ##############################################################################
   
   ## calculate environmental intensity
@@ -190,7 +191,9 @@ server <- function(input, output, session) {
     req(input$from_product)
     req(input$year)
     req(input$allocation)
+    req(input$env_factor)
     req(input$top_n)
+    req(input$agg_percent)
     
     time <- Sys.time()
     
@@ -649,13 +652,4 @@ server <- function(input, output, session) {
     
     p
   })
-  
-  ### Bookmarking: Read values from state$input when we restore, in order to call them in uiOutput
-  # onRestore(function(state) {
-  #   
-  #   input$from_region <- state$input$from_region
-  #   input$from_product <- state$input$from_product
-  #   input$year <- state$input$year
-  #   
-  # })
 }
