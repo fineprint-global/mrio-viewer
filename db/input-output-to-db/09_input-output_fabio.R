@@ -1,12 +1,8 @@
 ##################################################################
-### 8. L.rds - add input-output leontief
+### 9. L.rds - add input-output leontief for FABIO
 ##################################################################
 
-print("08_input-output.R")
-
-# # if run as standalone, run:
-# setwd("db/input-output-to-db") # only needed if you execute manually, not bash
-# source('01-03_setup.R')
+print("09_input-output_fabio.R")
 
 # ----------------------------------------------------------------
 # preparation ----------------------------------------------------
@@ -43,9 +39,7 @@ n_region <- nrow(region)
 
 for(t in c(1:nrow(allocation))){
   print(paste("Now allocation", t))
-  
-  # t <- 2
-  
+
   # Check for which years we already have data for, for the current allocation
   # care: in case you stopped an operation to the db or changed the original data
   # you should remove the data from the db before any other operations.
@@ -64,8 +58,6 @@ for(t in c(1:nrow(allocation))){
   rm(query, result)
   
   for(year in year_range){
-    # year <- 2013 # temporarily just 2013
-    
     data <- read_file_function(sprintf(file_format, year, file_names$io_leontief[t]))
     
     start <- Sys.time()
@@ -118,33 +110,23 @@ for(t in c(1:nrow(allocation))){
                                      amount / 1000,
                                      amount))
     
-    # now we filter for amounts >= 0.01
+    # now we filter for amounts >= 0.005
     insert_data <- insert_data %>% 
-      # dplyr::filter(amount != 0) %>% # this significantly reduces our number of rows (e.g. for 2013 it's down by over 90%!)
-      # dplyr::filter(amount > 0.01 | amount < -0.01) %>% # this significantly reduces our number of rows (e.g. for 2013 it's down by over 99.99955%!)
-      dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% # this significantly reduces our number of rows (e.g. for 2013 it's down by over 99.99939%!)
+      dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% # this significantly reduces our number of rows
       dplyr::select(from_region, to_region, from_product, to_product, year, allocation, amount)
     
     print(Sys.time()-start)
+    # Time difference of 3.97836 mins
     
     start <- Sys.time()
     print("Saving current year to db")
     RPostgres::dbAppendTable(db, name = "input-output_leontief", value = insert_data)
     print(Sys.time()-start)
-    # Time difference of 1.808534 days (with 50M rows)
-    # Time difference of 17.7575 mins (with 380k rows)
+    # Time difference of 32.3919 mins
     
     rm(insert_data)
-    
     gc()
   }
-
 }
 
-start <- Sys.time()
-print("Retrieving data from db")
 # io_data <- RPostgres::dbReadTable(db, "input-output_leontief")
-print(Sys.time()-start)
-# Time difference of 1.868098 mins
-
-rm(io_data)

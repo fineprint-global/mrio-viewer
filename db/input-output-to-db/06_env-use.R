@@ -170,6 +170,6 @@ for(year in year_range){
 
 print("6. Populating env_intensity took")
 print(Sys.time()-start)
-# Time difference of 28.80357 mins
+# Time difference of 1.938291 mins
 
 # env_intensity <- RPostgres::dbReadTable(db, "env_intensity")

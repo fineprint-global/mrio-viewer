@@ -1,8 +1,8 @@
 ##################################################################
-### 10. Final demand from EXIOBASE
+### 8. Final demand from EXIOBASE
 ##################################################################
 
-print("10_final-demand_exio.R")
+print("09_final-demand_exio.R")
 
 # --------------------------------------------------------------
 # preparation --------------------------------------------------
@@ -66,10 +66,8 @@ year_range <- year_range[!(year_range < 1995)]
 # ----------------------------------------------------------------
 
 for(year in year_range){
-  
   print(paste("10 Y2: Year", year, "/", year_range[length(year_range)]))
-  # year <- 2013 # temporarily just 2013
-  
+
   # 343 columns, 49 regions, 7 stages per region
   load(paste0("/mnt/nfs_fineprint/tmp/exiobase/pxp/",year,"_Y.RData"))
   Y_exio <- Y
@@ -99,7 +97,7 @@ for(year in year_range){
   start <- Sys.time()
   RPostgres::dbAppendTable(db, name = "final_demand", value = insert_data)
   print(Sys.time()-start)
-  # Time difference of 16.15287 mins
+  # Time difference of 59.15825 mins
   
   rm(insert_data)
   gc()
