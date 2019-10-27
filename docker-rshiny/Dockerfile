@@ -1,5 +1,5 @@
 # Get shiny server with tidyverse installed already
-FROM rocker/shiny-verse:3.5.3
+FROM rocker/shiny-verse:3.6.1
 
 # Install a few dependencies for packages
 RUN apt-get update \
