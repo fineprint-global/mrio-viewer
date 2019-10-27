@@ -3,7 +3,7 @@
 ##################################################################
 
 # # install required packages if you do not have them already
-# install.packages(c("DBI", "RPostgreSQL", "countrycode", "tidyverse"))
+# install.packages(c("DBI", "RPostgreSQL", "countrycode", "tidyverse", "Matrix"))
 
 library(tidyverse)
 
@@ -66,7 +66,7 @@ file_names <- data.frame(
 ## other crucial information
 
 # define the year range of data to insert into the database
-year_range_orig <- c(2013:2013)
+year_range_orig <- c(2013:1995)
 
 ##################################################################
 ### 3. Create the database connection

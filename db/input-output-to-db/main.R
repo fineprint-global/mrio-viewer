@@ -5,19 +5,17 @@
 # Here, *FABIO* is used, so you will have to adjust your code to 
 # fit your own input-output table.
 
-# Note: per year 01-09 take around 8 hours to be saved into the db.
-
 ## STRUCTURE
 # 1. Load packages
 # 2. Setup environment variables
 # 3. Create the database connection
-# 4. E.rds - add general info about product, region
-# 5. E.rds - add environmental use (landuse and biomass)
-# 6. Y.rds - add final demand
-# 7. L.rds - add input-output leontief
-# 8. L.rds - add input-output leontief
-# 9. B_inv.rds - add input-output leontief for hybrid
-# 10. Final demand from EXIOBASE
+# 4. E.rds - add product info
+# 5. Add region info
+# 6. E.rds - add environmental use (landuse and biomass)
+# 7. Y.rds - add final demand for FABIO
+# 8. Final demand from EXIOBASE
+# 9. L.rds - add input-output leontief for FABIO
+# 10. B_inv.rds - add input-output leontief for hybrid
 
 # setwd("db/input-output-to-db")
 
@@ -53,7 +51,7 @@ source("05_region-info.R")
 source("06_env-use.R")
 
 ################################################################################
-### 7. Y.rds - add final demand
+### 7. Y.rds - add final demand for FABIO
 ################################################################################
 
 source("07_final-demand_fabio.R")
@@ -65,7 +63,7 @@ source("07_final-demand_fabio.R")
 source("08_final-demand_exio.R")
 
 ################################################################################
-### 9. L.rds - add input-output leontief
+### 9. L.rds - add input-output leontief for FABIO
 ################################################################################
 
 source("09_input-output_fabio.R")

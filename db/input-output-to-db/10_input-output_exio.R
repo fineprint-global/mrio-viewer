@@ -1,14 +1,10 @@
 ##################################################################
-### 9. B_inv.rds - add input-output leontief for the hybrid
+### 10. B_inv.rds - add input-output leontief for the hybrid
 ##################################################################
 
-print("09_B_inv.R")
+print("10_input-output_exio.R")
 
 library(Matrix)
-
-# # if run as standalone, run:
-# setwd("db/input-output-to-db") # only needed if you execute manually, not bash
-# source('01-03_setup.R')
 
 # ----------------------------------------------------------------
 # preparation ----------------------------------------------------
@@ -24,9 +20,7 @@ allocation <- RPostgres::dbReadTable(db, "allocation")
 # DBI::dbSendQuery(db, 'DELETE FROM "input-output_leontief";')
 
 for(t in c(1:nrow(allocation))){
-  
   print(paste("Now allocation", t))
-  # t <- 2
   
   # Check for which years we already have data for, for the current allocation
   # care: in case you stopped an operation to the db or changed the original data
@@ -46,16 +40,12 @@ for(t in c(1:nrow(allocation))){
   rm(query, result)
   
   for(year in year_range){
-    # year <- 2013 # temporarily just 2013
-    
     data <- read_file_function(sprintf(file_format_subfolder, "hybrid", year, file_names$B[t]))
     
     start <- Sys.time()
     print(paste("Preparing data for io_leontief for", 
                 year, 
                 "and filtering it already"))
-    
-    
     
     # change the data format from 192*130 columns to 2 columns and more rows
     # to easier get it into the database
@@ -98,32 +88,23 @@ for(t in c(1:nrow(allocation))){
                                      amount * 1000,
                                      amount))
     
-    # now we filter for amounts >= 0.01
+    # now we filter for amounts >= 0.005
     insert_data <- insert_data %>% 
-      # dplyr::filter(amount != 0) %>% # this significantly reduces our number of rows (e.g. for 2013 it's down by over 90%!)
-      # dplyr::filter(amount > 0.01 | amount < -0.01) %>% # this significantly reduces our number of rows (e.g. for 2013 it's down by over 99.99955%!)
-      dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% # this significantly reduces our number of rows (e.g. for 2013 it's down by over 99.99939%!)
+      dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% # this significantly reduces our number of rows
       dplyr::select(from_region, to_region, from_product, to_product, year, allocation, amount)
     
     print(Sys.time()-start)
+    # 1.212636 mins
     
     start <- Sys.time()
     print("Saving current year to db")
     RPostgres::dbAppendTable(db, name = "input-output_leontief", value = insert_data)
     print(Sys.time()-start)
-    # Time difference of 3.603777 hours
+    # Time difference of 16.63703 hours
     
     rm(insert_data)
-    
     gc()
   }
-
 }
 
-start <- Sys.time()
-print("Retrieving data from db")
 # io_data <- RPostgres::dbReadTable(db, "input-output_leontief")
-print(Sys.time()-start)
-# Time difference of 1.868098 mins
-
-rm(io_data)

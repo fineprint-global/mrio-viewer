@@ -2,7 +2,7 @@
 ### 7. Y.rds - add final demand
 ##################################################################
 
-print("07_final-demand.R")
+print("07_final-demand_fabio.R")
 
 # --------------------------------------------------------------
 # preparation --------------------------------------------------
@@ -82,8 +82,6 @@ rm(query, result)
 # ----------------------------------------------------------------
 
 for(year in year_range){
-  # year <- 2013 # temporarily just 2013
-  
   print(paste("Year", year, "/", year_range[length(year_range)]))
   
   data <- read_file_function(sprintf(file_format, year, file_names$final_demand[1]))
@@ -118,16 +116,10 @@ for(year in year_range){
   start <- Sys.time()
   RPostgres::dbAppendTable(db, name = "final_demand", value = insert_data)
   print(Sys.time()-start)
-  # Time difference of 13.09839 hours
+  # Time difference of 2.963786 hours
   
   rm(insert_data)
   gc()
 }
 
-start <- Sys.time()
-y_data <- RPostgres::dbReadTable(db, "final_demand")
-print(Sys.time()-start)
-# Time difference of 39.64467 secs
-
-rm(insert_data)
-
+# y_data <- RPostgres::dbReadTable(db, "final_demand")

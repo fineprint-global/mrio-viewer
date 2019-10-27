@@ -10,7 +10,8 @@ RUN apt-get update \
     pool \
     RColorBrewer \
     shinythemes \
-    shinycssloaders
+    shinycssloaders \
+    viridis
 
 # Copy configuration files into the Docker image
 COPY shiny-server.conf  /etc/shiny-server/shiny-server.conf

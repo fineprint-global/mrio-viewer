@@ -7,8 +7,6 @@ print("05_region-info.R")
 name_fabio <- "FABIO"
 name_exio <- "EXIOBASE"
 
-# setwd("db/input-output-to-db")
-
 # setting the encoding to latin1 is needed because Côte d'Ivoire has special chars
 regions_fabio <- read.csv2("../data/regions_fabio.csv", encoding = "latin1")
 regions_fao_exio <- read.csv2("../data/regions_fao-exio.csv")
