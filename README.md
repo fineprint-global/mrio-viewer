@@ -1,4 +1,7 @@
 # Input-Output Visualization
+
+[![DOI](https://zenodo.org/badge/188013182.svg)](https://zenodo.org/badge/latestdoi/188013182)
+
 A set of tools that allow for interactive visualization of input-output tables.
 
 The purpose of this project is to provide an interactive web visualization for input-output tables using R and PostgreSQL. As of right now there are two components, an R Shiny web application and a PostgreSQL Database (more specifically a PostGIS one). The network of those two components can be created with one single `docker-compose` command.
@@ -77,7 +80,7 @@ There are three ways to run this app.
 1. Make sure all necessary dependencies are installed.
 2. Make sure Docker (Desktop) is up and running.
 3. Make sure you completed the steps in [setup](#setup).
-4. Make sure you get all necessary files from [FABIO via [Zenodo](https://dx.doi.org/10.5281/zenodo.2577067) and run the scripts in the [input-output-to-db](db/input-output-to-db) directory.
+4. Make sure you get all necessary files from [FABIO via Zenodo](https://dx.doi.org/10.5281/zenodo.2577067) and run the scripts in the [input-output-to-db](db/input-output-to-db) directory.
 5. Navigate to the root directory (`io-visualization`) with a shell of your choice and run the following command:
 `docker-compose up -d`
 
