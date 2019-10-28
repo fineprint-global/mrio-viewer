@@ -1,4 +1,4 @@
-# IO Visualization
+# Input-Output Visualization
 A set of tools that allow for interactive visualization of input-output tables.
 
 The purpose of this project is to provide an interactive web visualization for input-output tables using R and PostgreSQL. As of right now there are two components, an R Shiny web application and a PostgreSQL Database (more specifically a PostGIS one). The network of those two components can be created with one single `docker-compose` command.
