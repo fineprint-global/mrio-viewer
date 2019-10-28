@@ -142,7 +142,14 @@ for(product_group in product_group_conc$id){
 
 # env_intensity ----------------------------------------------------------------
 env_intensity_tbl <- dplyr::tbl(pool, "env_intensity")
-env_factor_conc <- dplyr::tbl(pool, "env_factor") %>% dplyr::collect()
+env_factor_conc <- dplyr::tbl(pool, "env_factor") %>% 
+  dplyr::collect() %>% 
+  # change the name of landuse and biomass
+  dplyr::mutate(name = if_else(name == "landuse", 
+                               "cropland", 
+                               if_else(name == "biomass", 
+                                       "primary biomass", 
+                                       name)))
 env_factor_unit_conc <- dplyr::tbl(pool, "env_factor_unit") %>% dplyr::collect()
 
 # IO-leontief ------------------------------------------------------------------
