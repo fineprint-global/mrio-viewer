@@ -3,7 +3,6 @@
 ## STRUCTURE
 # 0. Functions for calculations
 # 1. Sankey visualization
-# 2. About
 
 # Define server logic
 server <- function(input, output, session) {

@@ -34,6 +34,10 @@ ui <- function(request) {
       tags$script(HTML("var header = $('.navbar > .container-fluid > .navbar-collapse.collapse');
                        header.append('<div style=\"float:right\"><a href=\"https://github.com/fineprint-global/io-visualization\" target=\"_blank\"><img src=\"img/github-light.png\" style=\"float:right;height:41px;padding-top:17px;\"></a></div>');")
       ),
+      # add About-Link as Menu Item
+      tags$script(HTML("var navbar = $('.navbar > .container-fluid > .navbar-collapse.collapse > .navbar-nav');
+                       navbar.append('<li><a href=\"//fineprint.global/resources/fabio\" target=\"_blank\">About</a></li>');")
+      ),
       
       ##################################################################
       ### 3. Sankey visualization
@@ -126,19 +130,6 @@ ui <- function(request) {
                   tags$li("(final) producing region"),
                   tags$li("final product"),
                   tags$li("consuming region"))
-        )
-      ),
-      
-      ##################################################################
-      ### 4. About
-      ##################################################################
-      tabPanel(
-        title = "About",
-        fluidRow(
-          column( width = 6,
-                  offset = 3,
-                  includeMarkdown("about.md")
-          )
         )
       )
     )

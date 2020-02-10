@@ -1,5 +1,11 @@
 /* Defines styles used in the shiny app. */
 
+@import url('https://fonts.googleapis.com/css?family=Lato&display=swap');
+
+body {
+  font-family: Lato, Arial, Helvetica, sans-serif;
+}
+
 /* UI elements */
 span.irs-bar-edge,
 span.irs-bar {
@@ -9,6 +15,25 @@ span.irs-bar {
 
 span.irs-single {
   background: #2c3e50;
+}
+
+/* navbar */
+.navbar .container-fluid {
+  background-image: url("img/drought-aridity-dry-earth-yellow.jpg");
+  color: #fff;
+}
+.navbar-default .container-fluid ul.navbar-nav > .active > a, 
+.navbar-default .container-fluid ul.navbar-nav > .active > a:hover, 
+.navbar-default .container-fluid ul.navbar-nav > .active > a:focus {
+  background-color: rgb(80,70,70); /* fallback */
+  background-color: rgba(0, 0, 0, 0.4);
+}
+.navbar .container-fluid ul.navbar-nav > li > a,
+.navbar .container-fluid ul.navbar-nav > li > a:hover,
+.navbar .container-fluid ul.navbar-nav > li > a:focus,
+.navbar-header span.navbar-brand:hover,
+.navbar-header span.navbar-brand:active {
+  color: #fff;
 }
 
 /* legend for flows */
