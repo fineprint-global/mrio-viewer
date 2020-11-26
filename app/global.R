@@ -142,6 +142,7 @@ for(product_group in product_group_conc$id){
 
 # env_intensity ----------------------------------------------------------------
 env_intensity_tbl <- dplyr::tbl(pool, "env_intensity")
+env_intensity_calculated_tbl <- dplyr::tbl(pool, "env_intensity_calculated")
 env_factor_conc <- dplyr::tbl(pool, "env_factor") %>% 
   dplyr::collect() %>% 
   # change the name of landuse and biomass
