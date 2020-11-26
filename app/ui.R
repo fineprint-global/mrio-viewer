@@ -84,7 +84,7 @@ ui <- function(request) {
                            choices = allocation_conc$name)
           ),
           column(
-            width = 2,
+            width = 1,
             selectizeInput(inputId = "env_factor",
                            label = "Environmental factor",
                            choices = env_factor_conc$name,
@@ -109,7 +109,9 @@ ui <- function(request) {
                          step = 1)
           ),
           column(
-            width = 1,
+            width = 2,
+            submitButton(text = "Update", # submit button removes reactivity (only reloads when clicked)
+                         icon = icon("refresh")),
             bookmarkButton(label = "Share")
           )
         ),
