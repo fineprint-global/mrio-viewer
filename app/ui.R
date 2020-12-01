@@ -49,26 +49,55 @@ ui <- function(request) {
           # input elements -------------------------------------------------
           # ----------------------------------------------------------------
           column(
-            width = 2,
+            width = 1,
             offset = 0,
-            # here, we put the input elements
-            selectizeInput(inputId = "from_region",
-                           label = "Region of origin",
-                           choices = list(
-                             Region = region_fabio$name,
-                             Cluster = continents$name.cluster
-                           ),
-                           selected = "Brazil")
+            selectizeInput(inputId = "mode",
+                           label = "Visualisation mode",
+                           choices = modes,
+                           selected = modes[1])
+          ),
+          # mode: normal direction
+          conditionalPanel(condition = "input.mode == 'origin'",
+            column(
+              width = 2,
+              selectizeInput(inputId = "from_region",
+                             label = "Region of origin",
+                             choices = list(
+                               Region = region_fabio$name,
+                               Cluster = continents$name.cluster
+                             ),
+                             selected = "Brazil")
+            ),
+            column(
+              width = 2,
+              selectizeInput(inputId = "from_product",
+                             label = "Product of origin",
+                             choices = product_dropdown,
+                             selected = "Soyabeans")
+            )
+          ),
+          # mode: reverse direction
+          conditionalPanel(condition = "input.mode == 'destination'",
+            column(
+             width = 2,
+             selectizeInput(inputId = "to_region_y",
+                            label = "Destination region",
+                            choices = list(
+                              Region = region_exio$name,
+                              Cluster = continents$name.cluster
+                            ),
+                            selected = "Austria")
+            ),
+            column(
+             width = 2,
+             selectizeInput(inputId = "to_product",
+                            label = "Destination product",
+                            choices = product_destination_dropdown,
+                            selected = "Textiles")
+            )
           ),
           column(
-            width = 2,
-            selectizeInput(inputId = "from_product",
-                           label = "Product of origin",
-                           choices = product_dropdown,
-                           selected = "Soyabeans")
-          ),
-          column(
-            width = 2,
+            width = 1,
             sliderInput(inputId = "year", 
                         label = "Year", 
                         min = year_max_min$min,
@@ -109,9 +138,18 @@ ui <- function(request) {
                          step = 1)
           ),
           column(
-            width = 2,
-            submitButton(text = "Update", # submit button removes reactivity (only reloads when clicked)
-                         icon = icon("refresh")),
+            width = 1,
+            align = "center",
+            # using action button instead of submitButton because of 
+            actionButton(inputId = "run",
+                         label = "Update",
+                         icon = icon("refresh")
+                         )
+            # submitButton(text = "Update", # submit button removes reactivity (only reloads when clicked)
+            #              icon = icon("refresh"))
+          ),
+          column(
+            width = 1,
             bookmarkButton(label = "Share")
           )
         ),
@@ -125,8 +163,8 @@ ui <- function(request) {
         fluidRow(
           tags$ul(class = "flow-legend clearfix",
                   # style = "position: absolute; bottom: 30px; list-style-type: none;", # "#43BF714D" "#4401544D"
-                  tags$li(HTML("<span>&nbsp;</span> food")),
-                  tags$li(HTML("<span>&nbsp;</span> nonfood"))),
+                  tags$li(HTML(paste("<span>&nbsp;</span>", name_fabio))),
+                  tags$li(HTML(paste("<span>&nbsp;</span>", name_exio)))),
           tags$ul(class = "description clearfix",
                   tags$li("from-region & from-product"),
                   tags$li("(final) producing region"),

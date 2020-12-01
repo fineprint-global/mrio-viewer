@@ -46,6 +46,7 @@ onStop(function() { # this is required to close the pool so we have no leaking c
 # define all tables
 name_fabio <- "FABIO"
 name_exio <- "EXIOBASE"
+modes <- c("origin", "destination")
 
 # Region -----------------------------------------------------------------------
 # here, we create region_fabio and _exio to be able to 
@@ -139,6 +140,10 @@ for(product_group in product_group_conc$id){
       base::sort() # sort alphabetically within groups
   )
 }
+
+# separate dropdown for second mode (destination)
+product_destination_dropdown <- product_dropdown
+product_destination_dropdown["Non-food"] <- list(product_exio$name %>% base::sort())
 
 # env_intensity ----------------------------------------------------------------
 env_intensity_tbl <- dplyr::tbl(pool, "env_intensity")
