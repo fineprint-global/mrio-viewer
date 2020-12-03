@@ -20,6 +20,8 @@ server <- function(input, output, session) {
   ### 0. Functions for calculations
   ##############################################################################
   
+  ## 0.1 mode 1 ----------------------------------------------------------------
+  
   ## calculate environmental intensity
   calc_env_intensity <- function(env_factor, from_region, from_product, year, allocation){
   
@@ -140,7 +142,7 @@ server <- function(input, output, session) {
     return(result)
   }
   
-  calc_results_for_region <- function(from_region, from_product, year, allocation, env_factor, progress, n_steps){
+  calc_results_for_region <- function(from_region, from_product, year, allocation, env_factor){
     # get/calculate environmental intensity from database
     e <- calc_env_intensity(env_factor, from_region, from_product, year, allocation)
     
@@ -155,6 +157,118 @@ server <- function(input, output, session) {
     result_exio <- calc_footprint(from_region, from_product, year, allocation, e, type = "Nonfood")
     
     results <- base::rbind(result_exio, result_fabio)
+    
+    return(results)
+  }
+  
+  ## 0.2 mode 2 ----------------------------------------------------------------
+  
+  calc_env_intensity_m2 <- function(env_factor, unique_combos, year){
+    # 1. prepare extension, get environmental intensity
+    env_intensity <- env_intensity_tbl %>% 
+      dplyr::filter(from_region %in% !!unique_combos$from_region,
+                    from_product %in% !!unique_combos$from_product,
+                    year == !!year,
+                    env_factor == !!env_factor_conc$id[env_factor_conc$name == env_factor]) %>% 
+      dplyr::select(-id, -year, -env_factor) %>% 
+      dplyr::collect() %>% 
+      # check if all region&product combinations are present in final demand
+      dplyr::filter(paste(from_region,from_product) %in% paste(unique_combos$from_region, 
+                                                               unique_combos$from_product))
+    
+    e <- unique_combos %>% 
+      dplyr::left_join(env_intensity, by = c("from_region", "from_product")) %>% 
+      # change env impact to 0 as specified in the E matrix
+      # since primary crop inputs are already accounted for with the L inverse
+      dplyr::mutate(amount = ifelse(is.na(amount), 0, amount))
+    
+    return(e)
+  }
+  
+  calc_results_m2 <- function(to_region_y, to_product, year, allocation, env_factor){
+    
+    # for the reverse mode, the order is reversed:
+    # 1. get final demand
+    # 2. check what columns in L inverse we need
+    # 3. get the environmental intensity for those
+    
+    # 1. get final demand
+    final_demand <- final_demand_tbl %>% 
+      dplyr::filter(
+        to_region %in% !!to_region_y &
+          product %in% !!to_product &
+          year == !!year
+      ) %>% 
+      # we could group by and thus omit the "element" col which we don't use
+      dplyr::group_by(from_region, to_region, product, year) %>%
+      dplyr::summarise(amount = sum(amount, na.rm = TRUE)) %>%
+      dplyr::collect()
+    
+    if(nrow(final_demand) == 0){
+      return(NULL)
+    }
+    
+    # 2. get columns in L inverse we need
+    # filtering separately and afterwards filtering again to have exact combo-matches
+    # is by far the fastest way to get the info
+    io_leontief <- io_leontief_tbl %>% 
+      dplyr::filter(year == !!year,
+                    to_region %in% !!final_demand$from_region,
+                    to_product %in% !!to_product,
+                    allocation == !!allocation) %>% 
+      dplyr::select(-id) %>% 
+      dplyr::collect() %>% 
+      # check if all region&product combinations are present in final demand
+      dplyr::filter(paste(to_region,to_product) %in% paste(final_demand$from_region, 
+                                                           final_demand$product))
+    # prepare results df containing almost all relevant info, only e is needed
+    result <- io_leontief %>% 
+      dplyr::left_join(final_demand, 
+                       by = c("to_region" = "from_region", "to_product" = "product"), 
+                       suffix = c("_io", "_y")) %>% 
+      dplyr::filter(!is.na(amount_io) &
+                      !is.na(amount_y)) %>% 
+      dplyr::select(from_region, from_product, to_region, to_product, to_region_y, amount_io, amount_y)
+    
+    # 3. get the environmental intensity for every from_product&from_region combination
+    unique_combos <- result %>% 
+      dplyr::group_by(from_region, from_product) %>% 
+      dplyr::summarise() %>% 
+      dplyr::distinct()
+    
+    e <- calc_env_intensity_m2(env_factor, unique_combos, year)
+    
+    # 4. join e with result df to calculate footprints
+    result <- result %>% 
+      dplyr::left_join(e, by = c("from_region", "from_product")) %>% 
+      dplyr::rename(amount_e = amount) %>% 
+      dplyr::mutate(comFP = (amount_io * amount_y)) %>%
+      dplyr::mutate(envFP = comFP * amount_e) %>% 
+      dplyr::ungroup() # we need this ungroup to be able to rbind the data afterwards
+    
+    # # separate food and nonfood to adjust food-regions to EXIOBASE ones
+    # # usually one of them has 0 rows, but that does not change our operations
+    # food <- result %>% filter(to_region %in% region_fabio$id)
+    # nonfood <- result %>% filter(to_region %in% region_exio$id)
+    # 
+    # food <- food %>% 
+    #   dplyr::left_join(region_fabio[,c("id", "exio_id")], by = c("to_region" = "id")) %>%
+    #   dplyr::ungroup() %>%
+    #   dplyr::mutate(to_region = if_else(is.na(exio_id), 192L, exio_id)) %>% # recode FABIO to EXIO regions, except for RoW (id=192)
+    #   dplyr::select(-exio_id) %>%
+    #   dplyr::left_join(region_fabio[,c("id", "exio_id")], by = c("to_region_y" = "id")) %>%
+    #   dplyr::ungroup() %>%
+    #   dplyr::mutate(to_region_y = if_else(is.na(exio_id), 192L, exio_id)) %>% # recode FABIO to EXIO regions, except for RoW (id=192)
+    #   dplyr::select(-exio_id) %>%
+    #   dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>%
+    #   dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
+    #   dplyr::ungroup() # we need this ungroup to be able to rbind the data afterwards
+    # 
+    # nonfood <- nonfood %>% 
+    #   dplyr::select(from_region, from_product, to_region, to_product, to_region_y, envFP)
+    # 
+    # results <- base::rbind(food, nonfood)
+    results <- result
     
     return(results)
   }
@@ -198,37 +312,61 @@ server <- function(input, output, session) {
                    detail = "environmental impact data", 
                    value = 0)
       
-      # is input-region just one region or a cluster?
-      if(input$from_region %in% continents$name.cluster){ # is cluster
-        cluster <- input$from_region
-        from_regions <- (region_continent %>% 
-                           dplyr::filter(name.cluster == cluster) %>% 
-                           dplyr::select(id) %>% 
-                           dplyr::collect())$id
-        
-        # only take regions in FABIO because there is no 
-        # FROM product from an EXIO region
-        from_regions <- from_regions[from_regions %in% region_fabio$id]
-        
-        # define the number of steps for the progress bar to reach 100%
-        n_steps <- 5 + length(from_regions) # 5 "normal" steps + 1 per region
-        
-        cluster_mode <- TRUE
-      } else{ # just one region
-        # define the number of steps for the progress bar to reach 100%
-        n_steps <- 6
-        
-        cluster_mode <- FALSE
-      }
-      
       # get user inputs
       mode <- input$mode
       
       if(mode == modes[1]){
+        # is input-region just one region or a cluster?
+        if(input$from_region %in% continents$name.cluster){ # is cluster
+          cluster <- input$from_region
+          from_regions <- (region_continent %>% 
+                             dplyr::filter(name.cluster == cluster) %>% 
+                             dplyr::select(id) %>% 
+                             dplyr::collect())$id
+          
+          # only take regions in FABIO because there is no 
+          # FROM product from an EXIO region
+          from_regions <- from_regions[from_regions %in% region_fabio$id]
+          
+          # define the number of steps for the progress bar to reach 100%
+          n_steps <- 5 + length(from_regions) # 5 "normal" steps + 1 per region
+          
+          cluster_mode <- TRUE
+        } else{ # just one region
+          # define the number of steps for the progress bar to reach 100%
+          n_steps <- 6
+          
+          cluster_mode <- FALSE
+        }
+        
         from_region <- region_fabio$id[region_fabio$name==input$from_region]
         from_product <- product_fabio$id[product_fabio$name==input$from_product]
       } else {
-        to_region_y <- region_exio$id[region_exio$name==input$to_region_y]
+        input_to_region_y <- sub(sprintf(" (%s)", name_fabio), "", input$to_region_y, fixed = TRUE)
+        input_to_region_y <- sub(sprintf(" (%s)", name_exio), "", input_to_region_y, fixed = TRUE)
+        
+        # is input-region just one region or a cluster?
+        if(input_to_region_y %in% continents$name.cluster){ # is cluster
+          cluster <- input_to_region_y
+          to_region_y <- (region_continent %>% 
+                             dplyr::filter(name.cluster == cluster) %>% 
+                             dplyr::select(id) %>% 
+                             dplyr::collect())$id
+          
+          # only take regions in EXIOBASE because those are the ones
+          # for which we have final demand
+          
+          # to_region_y <- to_region_y[to_region_y %in% region_exio$id]
+          
+          cluster_mode <- TRUE
+        } else{ # just one region
+          cluster_mode <- FALSE
+          
+          to_region_y <- region_conc$id[region_conc$name==input_to_region_y]
+        }
+        # define the number of steps for the progress bar to reach 100%
+        n_steps <- 6
+        
         to_product <- product_conc$id[product_conc$name==input$to_product]
       }
       
@@ -256,7 +394,7 @@ server <- function(input, output, session) {
       # Calculate footprints
       ############################################################################
       
-      if(cluster_mode){
+      if(cluster_mode && mode == modes[1]){
         results <- NULL
         
         for(from_region in from_regions){
@@ -265,7 +403,7 @@ server <- function(input, output, session) {
                                                    match(from_region, from_regions), # get position in list for current region
                                                    length(from_regions))) # update progress
           
-          result_region <- calc_results_for_region(from_region, from_product, year, allocation, env_factor, progress, n_steps)
+          result_region <- calc_results_for_region(from_region, from_product, year, allocation, env_factor)
           
           if(!is.null(result_region)){
             if(is.null(results)){
@@ -309,19 +447,57 @@ server <- function(input, output, session) {
             dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
             dplyr::ungroup()
         }
+      } else if(mode == modes[1]) {
+        progress$inc(1/n_steps, detail = paste(name_fabio, "&", name_exio, "data and calculating footprints")) # update progress
         
-      } else {
-        progress$inc(1/n_steps, detail = "food and nonfood data & calculating footprints") # update progress
+        results <- calc_results_for_region(from_region, from_product, year, allocation, env_factor)
+      } else{ # mode 2
+        progress$inc(1/n_steps, detail = paste(name_fabio, "&", name_exio, "data and calculating footprints")) # update progress
         
-        results <- calc_results_for_region(from_region, from_product, year, allocation, env_factor, progress, n_steps)
-      }
-      
-      if(is.null(results)){
-        return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f).",# You can select 'product unit' as env. factor.",
-                                      allocation_conc$name[allocation_conc$id == allocation], 
-                                      product_conc$name[product_conc$id == from_product], 
-                                      input$from_region, 
-                                      year)))
+        results <- calc_results_m2(to_region_y, to_product, year, allocation, env_factor)
+        
+        if(cluster_mode){
+          # redefine region_conc for the current context
+          region_conc <- region_continent %>% 
+            dplyr::select(id_region_cluster, name.cluster) %>% 
+            dplyr::distinct() %>% 
+            dplyr::rename(id = id_region_cluster,
+                          name = name.cluster)
+          
+          # make sure results are not NULL
+          if(!is.null(results)){
+            # aggregate regions
+            # results <- results_to_region_cluster(results)
+            # results$from_region <- region_continent$id_region_cluster[region_continent]
+            results <- results %>% 
+              dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>% 
+              dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
+              dplyr::ungroup() %>% 
+              # mutate from_region to cluster
+              dplyr::left_join(region_continent[,c("id", "id_region_cluster")], by = c("from_region" = "id")) %>% 
+              dplyr::mutate(from_region = id_region_cluster) %>% 
+              dplyr::select(-id_region_cluster) %>% 
+              # mutate to_region to cluster
+              dplyr::left_join(region_continent[,c("id", "id_region_cluster")], by = c("to_region" = "id")) %>% 
+              dplyr::mutate(to_region = id_region_cluster) %>% 
+              dplyr::select(-id_region_cluster) %>% 
+              # mutate to_region_y to cluster
+              dplyr::left_join(region_continent[,c("id", "id_region_cluster")], by = c("to_region_y" = "id")) %>% 
+              dplyr::mutate(to_region_y = id_region_cluster) %>% 
+              dplyr::select(-id_region_cluster) %>%
+              # now we summarize everything by cluster
+              dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>% 
+              dplyr::summarise(envFP = sum(envFP, na.rm = TRUE)) %>% 
+              dplyr::ungroup()
+          }
+        }
+        if(is.null(results)){
+          return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f).",
+                                        allocation_conc$name[allocation_conc$id == allocation], 
+                                        product_conc$name[product_conc$id == to_product], 
+                                        input_to_region_y, 
+                                        year)))
+        }
       }
       
       ############################################################################
@@ -336,23 +512,39 @@ server <- function(input, output, session) {
       # we take the top 5 (or top_n if user input) to_regions_y
       
       if(!cluster_mode){
+        # this is not necessary for mode=modes[1]
+        if(mode == modes[2]){
+          top_from_reg <- results %>% 
+            dplyr::group_by(from_region) %>% 
+            dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
+            dplyr::top_n(top_n, envFP)
+        } else {
+          top_from_reg <- results %>% dplyr::group_by(from_region) %>% dplyr::summarise()
+        }
+        
         top_to_reg <- results %>% 
           dplyr::group_by(to_region) %>% 
           dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
           dplyr::top_n(top_n, envFP)
         
-        top_to_reg_y <- results %>% 
-          dplyr::group_by(to_region_y) %>% 
-          dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
-          dplyr::top_n(top_n, envFP)
+        # this is not necessary for mode=modes[2]
+        if(mode == modes[1]){
+          top_to_reg_y <- results %>%
+            dplyr::group_by(to_region_y) %>%
+            dplyr::summarise(envFP = sum(envFP, na.rm = T)) %>%
+            dplyr::top_n(top_n, envFP)
+        } else {
+          top_to_reg_y <- results %>% dplyr::group_by(to_region_y) %>% dplyr::summarise()
+        }
         
         agg <- results %>%
+          dplyr::mutate(from_region = if_else(from_region %in% top_from_reg$from_region, from_region, 192L)) %>% 
           dplyr::mutate(to_region = if_else(to_region %in% top_to_reg$to_region, to_region, 192L)) %>% 
-          dplyr::mutate(to_region_y = if_else(to_region_y %in% top_to_reg_y$to_region_y, to_region_y, 192L)) %>% 
+          dplyr::mutate(to_region_y = if_else(to_region_y %in% top_to_reg_y$to_region_y, to_region_y, 192L)) %>%
           dplyr::group_by(from_region, from_product, to_region, to_product, to_region_y) %>% 
           dplyr::summarise(envFP = sum(envFP, na.rm = T))
         
-        rm(top_to_reg, top_to_reg_y)
+        rm(top_from_reg, top_to_reg, top_to_reg_y)
       } else {
         agg <- results
       }
@@ -369,6 +561,18 @@ server <- function(input, output, session) {
       
       # only aggregate if there is a agg_percent > 0 specified
       if(agg_percent > 0){
+        # for step 1
+        step1 <- step1 %>% 
+          dplyr::ungroup() %>% 
+          dplyr::mutate(from_product = if_else((envFP / total_footprint) > agg_percent,
+                                               from_product,
+                                               if_else(from_product %in% product_fabio$id,
+                                                       product_other$food,
+                                                       product_other$nonfood))) %>% 
+          dplyr::group_by(from_region, from_product, to_region) %>% 
+          dplyr::summarise(envFP = sum(envFP, na.rm = T))
+        
+        # for step 2
         step2 <- step2 %>% 
           dplyr::ungroup() %>% 
           dplyr::mutate(to_product = if_else((envFP / total_footprint) > agg_percent,
@@ -447,7 +651,7 @@ server <- function(input, output, session) {
       # NODES --------------------------------------------------------------------
       progress$inc(1/n_steps, message = "Preparing data for plotting", detail = "preparing nodes") # update progress
       
-      ## start node
+      ## start nodes
       nodes_1 <- data.frame(
         id = unique(step1$from_region),
         step = 0 # 0 for start
@@ -500,9 +704,15 @@ server <- function(input, output, session) {
       nodes_production_product <- nodes_production_product %>% 
         dplyr::select(-region_name)
       
-      nodes$name[nodes$step == 0] <- sprintf("%s (%s)", 
-                                             product_fabio$name[product_fabio$id==from_product], 
-                                             input$from_region)
+      if(mode == modes[1]){
+        nodes$name[nodes$step == 0] <- sprintf("%s (%s)", 
+                                               product_fabio$name[product_fabio$id==from_product], 
+                                               input$from_region)
+      } else if (mode == modes[2]){
+        # nodes$name[nodes$step == 3] <- sprintf("%s (%s)", 
+        #                                        product_conc$name[product_conc$id==to_product], 
+        #                                        input$to_region)
+      }
       
       nodes <- rbind(nodes, nodes_production_product)
       
@@ -555,7 +765,15 @@ server <- function(input, output, session) {
         dplyr::ungroup() %>% 
         dplyr::select(source, target, amount, product, color)
       
-      links <- rbind(step1, step1_2, step2)
+      if(mode == modes[2]){
+        final_node <- nodes[nodes$step == 3,]$index
+        step1_2$target <- final_node
+        links <- rbind(step1, step1_2)
+        
+        nodes <- nodes %>% dplyr::filter(step != 2)
+      } else {
+        links <- rbind(step1, step1_2, step2)
+      }
       
       source_links <- links %>% 
         dplyr::group_by(source) %>% 
@@ -574,6 +792,12 @@ server <- function(input, output, session) {
         dplyr::ungroup() %>% 
         dplyr::select(-amount.tgt) %>% 
         dplyr::mutate(percent = amount / total_footprint * 100)
+      
+      if (mode == modes[2]){
+        nodes$name[nodes$step == 3] <- sprintf("%s (%s)",
+                                               product_conc$name[product_conc$id==to_product],
+                                               input_to_region_y)
+      }
       
       # SANKEY: NODES
       # create list of nodes

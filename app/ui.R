@@ -83,17 +83,18 @@ ui <- function(request) {
              selectizeInput(inputId = "to_region_y",
                             label = "Destination region",
                             choices = list(
-                              Region = region_exio$name,
-                              Cluster = continents$name.cluster
+                              "FABIO Regions" = sprintf("%s (%s)", region_fabio$name, name_fabio),
+                              "EXIOBASE Regions" = sprintf("%s (%s)", region_exio$name, name_exio),
+                              "Cluster" = continents$name.cluster
                             ),
-                            selected = "Austria")
+                            selected = "European Union" # sprintf("%s (%s)", "Austria", name_fabio))
             ),
             column(
              width = 2,
              selectizeInput(inputId = "to_product",
                             label = "Destination product",
                             choices = product_destination_dropdown,
-                            selected = "Textiles")
+                            selected = "Bovine Meat")
             )
           ),
           column(
@@ -161,15 +162,24 @@ ui <- function(request) {
             shinycssloaders::withSpinner(size = 1.5)
         ),
         fluidRow(
-          tags$ul(class = "flow-legend clearfix",
-                  # style = "position: absolute; bottom: 30px; list-style-type: none;", # "#43BF714D" "#4401544D"
-                  tags$li(HTML(paste("<span>&nbsp;</span>", name_fabio))),
-                  tags$li(HTML(paste("<span>&nbsp;</span>", name_exio)))),
-          tags$ul(class = "description clearfix",
-                  tags$li("from-region & from-product"),
-                  tags$li("(final) producing region"),
-                  tags$li("final product"),
-                  tags$li("consuming region"))
+          conditionalPanel(condition = "input.mode == 'origin'",
+                           tags$ul(class = "flow-legend clearfix",
+                                   tags$li(HTML(paste("<span>&nbsp;</span>", name_fabio))),
+                                   tags$li(HTML(paste("<span>&nbsp;</span>", name_exio)))),
+                           tags$ul(class = "description clearfix",
+                                   tags$li("from-region & from-product"),
+                                   tags$li("(final) producing region"),
+                                   tags$li("final product"),
+                                   tags$li("consuming region"))),
+          conditionalPanel(condition = "input.mode == 'destination'",
+                           tags$ul(class = "flow-legend2 clearfix",
+                                   tags$li(HTML(paste("<span>&nbsp;</span>", name_fabio))),
+                                   tags$li(HTML(paste("<span>&nbsp;</span>", name_exio)))),
+                           tags$ul(class = "description2 clearfix",
+                                   tags$li("from-region"),
+                                   tags$li("(final) producing region"),
+                                   tags$li("consuming region")))
+          
         )
       )
     )

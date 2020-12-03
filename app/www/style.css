@@ -56,8 +56,30 @@ ul.flow-legend > li:nth-of-type(2) > span {
   background-color: #4401544D; 
 }
 
-/* desciption for plot */
-ul.description {
+/* legend for flows in mode 2 */
+ul.flow-legend2 {
+  position: absolute; 
+  bottom: 2.5em; 
+  right: 5px;
+  margin-right: 5px;
+  list-style-type: none;
+}
+ul.flow-legend2 > li > span {
+  display: block; 
+  float: right; 
+  width: 1.5em; 
+  margin-left: 5px;
+}
+ul.flow-legend2 > li:nth-of-type(1) > span {
+  background-color: #43BF714D; 
+}
+ul.flow-legend2 > li:nth-of-type(2) > span {
+  background-color: #4401544D; 
+}
+
+/* description for plot */
+ul.description, 
+ul.description2 {
   list-style-type: none;
   margin: 0;
   background-color: #e8e8e8;
@@ -68,9 +90,9 @@ ul.description {
   width: 100%;
   bottom: 0;
 }
-ul.description li {
+ul.description li, 
+ul.description2 li {
   display: block;
-  width: 25%;
   float: left;
   text-align: center;
   height: 2em;
@@ -78,9 +100,16 @@ ul.description li {
   font-style: italic;
   font-weight: 500;
 }
+ul.description li:first-child,
+ul.description2 li:first-child{
+  text-align: left;
+}
+/* ... mode 1 */
+ul.description li {
+  width: 25%;
+}
 ul.description li:first-child {
   padding-left: 5px;
-  text-align: left;
 }
 ul.description li:nth-child(2) {
   padding-right: 6%;
@@ -89,6 +118,19 @@ ul.description li:nth-child(3) {
   padding-left: 8%;
 }
 ul.description li:last-child {
+  padding-right: 10px;
+  text-align: right;
+}
+/* ... mode 2 */
+ul.description2 li {
+  width: 33.33%;
+}
+ul.description2 li:first-child {
+  padding-left: 20px;
+}
+ul.description2 li:nth-child(2) {
+}
+ul.description2 li:last-child {
   padding-right: 10px;
   text-align: right;
 }
