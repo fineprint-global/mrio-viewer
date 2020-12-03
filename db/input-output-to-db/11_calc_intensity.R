@@ -79,3 +79,5 @@ for(env_factor_id in env_factor_conc$id){
     }
   }
 }
+
+DBI::dbSendQuery(db, "GRANT SELECT ON TABLE env_intensity_calculated TO app;")

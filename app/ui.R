@@ -87,7 +87,7 @@ ui <- function(request) {
                               "EXIOBASE Regions" = sprintf("%s (%s)", region_exio$name, name_exio),
                               "Cluster" = continents$name.cluster
                             ),
-                            selected = "European Union" # sprintf("%s (%s)", "Austria", name_fabio))
+                            selected = "European Union") # sprintf("%s (%s)", "Austria", name_fabio))
             ),
             column(
              width = 2,
