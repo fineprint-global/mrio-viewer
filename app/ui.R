@@ -167,7 +167,7 @@ ui <- function(request) {
                                    tags$li(HTML(paste("<span>&nbsp;</span>", name_fabio))),
                                    tags$li(HTML(paste("<span>&nbsp;</span>", name_exio)))),
                            tags$ul(class = "description clearfix",
-                                   tags$li("from-region & from-product"),
+                                   tags$li("region & product of origin"),
                                    tags$li("(final) producing region"),
                                    tags$li("final product"),
                                    tags$li("consuming region"))),
@@ -176,10 +176,9 @@ ui <- function(request) {
                                    tags$li(HTML(paste("<span>&nbsp;</span>", name_fabio))),
                                    tags$li(HTML(paste("<span>&nbsp;</span>", name_exio)))),
                            tags$ul(class = "description2 clearfix",
-                                   tags$li("from-region"),
+                                   tags$li("region of origin"),
                                    tags$li("(final) producing region"),
                                    tags$li("consuming region")))
-          
         )
       )
     )
