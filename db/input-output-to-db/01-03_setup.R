@@ -12,7 +12,7 @@ library(tidyverse)
 ##################################################################
 
 # save the folder path
-folder_path <- "/mnt/nfs_fineprint/tmp/fabio/"
+folder_path <- "/mnt/nfs_fineprint/tmp/fabio/v2/"
 
 ## FILE TYPE
 file_type <- "rds"
@@ -49,9 +49,10 @@ file_format <- paste0(folder_path, "%i_%s.", file_type) # e.g. /mnt/nfs_fineprin
 file_format_subfolder <- paste0(folder_path, "%s/%i_%s.", file_type) 
 
 ## DIFFERENT FILE NAMES
-allocation_type <- c("mass", "price") # this is needed to read files in our case
+allocation_type <- c("mass", "value") # this is needed to read files in our case
 # there is a different allocation type for the output because the term "value" is
 # preferred over "price", but the files are still saved with "price"
+# v2 already uses value
 allocation_type_output <- c("mass", "value")
 
 file_names <- data.frame(
@@ -66,7 +67,17 @@ file_names <- data.frame(
 ## other crucial information
 
 # define the year range of data to insert into the database
-year_range_orig <- c(2013:1995)
+year_range_orig <- c(2013:2010) # 1986
+
+# names used for FABIO and EXIOBASE
+name_fabio <- "FABIO"
+name_exio <- "EXIOBASE"
+# number of products FABIO and EXIOBASE
+n_product_fabio <- 125
+n_product_exiobase <- 200
+# number of regions FABIO and EXIOBASE
+n_region_fabio <- 192
+n_region_exio <- 49
 
 ##################################################################
 ### 3. Create the database connection

@@ -4,20 +4,17 @@
 
 print("05_region-info.R")
 
-name_fabio <- "FABIO"
-name_exio <- "EXIOBASE"
+regions_fao_exio <- readODS::read_ods(paste0(folder_path, "hybrid/fabio-exiobase.ods"), sheet = 3)
 
-# setting the encoding to latin1 is needed because Côte d'Ivoire has special chars
-regions_fabio <- read.csv2("../data/regions_fabio.csv", encoding = "latin1")
-regions_fao_exio <- read.csv2("../data/regions_fao-exio.csv")
+regions_fabio <- regions_fao_exio %>% 
+  dplyr::select(name = Country, iso3 = ISO)
 
 regions_exio <- regions_fao_exio %>% 
-  dplyr::select(EXIOregion, EXIOcode) %>% 
+  dplyr::select(EXIOBASE, EXIOBASE_code) %>% 
   dplyr::distinct() %>% 
-  dplyr::arrange(EXIOcode) %>% 
-  dplyr::filter(!is.na(EXIOregion)) %>% # filter NA, used for RoW
-  dplyr::rename(name = EXIOregion) %>% 
-  dplyr::select(name)
+  dplyr::arrange(EXIOBASE_code) %>% 
+  dplyr::filter(!is.na(EXIOBASE)) %>% # filter NA, used for RoW
+  dplyr::select(name = EXIOBASE)
 
 # FABIO data for region table --------------------------------------------------
 
@@ -25,11 +22,7 @@ region <- RPostgres::dbReadTable(db, "region")
 
 if(nrow(region) == 0){
   
-  # we keep data arranged by Country.Code as in the .csv
-  insert_data <- regions_fabio %>% 
-    dplyr::select(Country, ISO) %>% 
-    dplyr::rename(name = Country,
-                  iso3 = ISO)
+  insert_data <- regions_fabio
   
   DBI::dbAppendTable(db, name = "region", value = insert_data)
   
@@ -40,11 +33,9 @@ if(nrow(region) == 0){
 
 # EXIOBASE data for region table -----------------------------------------------
 
-if(nrow(region) <= 192){ # this means that only FABIO regions are in the table so far
+if(nrow(region) <= n_region_fabio){ # this means that only FABIO regions are in the table so far
   
-  insert_data <- data.frame(
-    name = regions_exio$name
-  )
+  insert_data <- regions_exio
   
   DBI::dbAppendTable(db, name = "region", value = insert_data)
   
@@ -77,13 +68,13 @@ region_cluster_region <- RPostgres::dbReadTable(db, "region_cluster_region")
 
 if(nrow(region_cluster_region) == 0){
   region_cluster_fabio <- region %>% 
-    dplyr::slice(1:192) %>% 
+    dplyr::slice(1:n_region_fabio) %>% 
     dplyr::select(id) %>% 
     dplyr::rename(id_region = id) %>% 
     dplyr::mutate(id_region_cluster = region_cluster$id[region_cluster$name == name_fabio])
   
   region_cluster_exio <- region %>% 
-    dplyr::slice(193:nrow(region)) %>% 
+    dplyr::slice((n_region_fabio+1):nrow(region)) %>% 
     dplyr::select(id) %>% 
     dplyr::rename(id_region = id) %>% 
     dplyr::mutate(id_region_cluster = region_cluster$id[region_cluster$name == name_exio])
@@ -189,13 +180,13 @@ for(reg_exio_id in region_exio$id){
 
 region_cluster_region <- RPostgres::dbReadTable(db, "region_cluster_region")
 
-if(nrow(region_cluster_region) <= 241){ # 241 = 192 (FABIO reg) + 49 (EXIO reg)
+if(nrow(region_cluster_region) <= (n_region_fabio+n_region_exio)){ # 241 = 192 (FABIO reg) + 49 (EXIO reg)
   
   # first, the Continent information is manually recoded
   # to allow for displaying the new names directly
-  region_cluster_fabio <- regions_fabio
-  region_cluster_fabio$Continent <- 
-    dplyr::recode(region_cluster_fabio$Continent,
+  region_cluster_fabio <- read.csv("../data/regions.csv", encoding = "latin1")
+  region_cluster_fabio$continent <- 
+    dplyr::recode(region_cluster_fabio$continent,
                   `AFR` = "Africa",
                   `ASI` = "Asia and Pacific",
                   `EU`  = "European Union",
@@ -205,22 +196,21 @@ if(nrow(region_cluster_region) <= 241){ # 241 = 192 (FABIO reg) + 49 (EXIO reg)
                   `OCE` = "Asia and Pacific",
                   `ROW` = "Rest of World"
     )
-  region_cluster_fabio$Continent <- as.character(region_cluster_fabio$Continent)
+  region_cluster_fabio$continent <- as.character(region_cluster_fabio$continent)
   # NOTE: the term "Continent" might be a bit confusing here
   # as EU or RoW are not actual continents but we keep using it for now
   
   region_cluster_exio <- regions_fao_exio %>% 
-    dplyr::left_join(region_cluster_fabio[,c("Country.Code","Continent")], 
-                     by = "Country.Code") %>%
-    dplyr::select(EXIOregion, Continent) %>% 
-    dplyr::distinct() %>% 
-    dplyr::mutate(Continent = if_else(EXIOregion == "RoW Middle East",
+    dplyr::left_join(region_cluster_fabio[,c("iso3c","continent")], 
+                     by = c("ISO" = "iso3c")) %>%
+    dplyr::select(EXIOBASE, continent) %>%
+    dplyr::mutate(continent = if_else(EXIOBASE == "RoW Middle East",
                                       "Asia and Pacific",
-                                      Continent)) %>% 
+                                      continent)) %>% 
     dplyr::distinct() %>% 
-    dplyr::arrange(EXIOregion) %>%
-    dplyr::filter(!is.na(EXIOregion),
-                  !is.na(Continent))
+    dplyr::arrange(EXIOBASE) %>%
+    dplyr::filter(!is.na(EXIOBASE),
+                  !is.na(continent))
   
   ## we create our continents in the region_cluster table
   # region_cluster table ---------------------------------------------------------
@@ -228,7 +218,7 @@ if(nrow(region_cluster_region) <= 241){ # 241 = 192 (FABIO reg) + 49 (EXIO reg)
   
   if(nrow(region_cluster) <= 2){
     insert_data <- data.frame(
-      name = unique(region_cluster_fabio$Continent) %>% sort()
+      name = unique(region_cluster_fabio$continent) %>% sort()
     )
     
     DBI::dbAppendTable(db, name = "region_cluster", value = insert_data)
@@ -241,9 +231,9 @@ if(nrow(region_cluster_region) <= 241){ # 241 = 192 (FABIO reg) + 49 (EXIO reg)
   ## now we join ids from the concordance tables
   # insert continent-clusters for FABIO regions
   insert_data <- region_cluster_fabio %>% 
-    dplyr::left_join(region_cluster, by = c("Continent" = "name")) %>% 
+    dplyr::left_join(region_cluster, by = c("continent" = "name")) %>% 
     dplyr::rename(id_region_cluster = id) %>% 
-    dplyr::left_join(region_fabio[,c("id", "name")], by = c("Country" = "name")) %>% 
+    dplyr::left_join(region_fabio[,c("id", "name")], by = c("name" = "name")) %>% 
     dplyr::rename(id_region = id) %>% 
     dplyr::select(id_region_cluster, id_region)
   # insert into db
@@ -251,11 +241,12 @@ if(nrow(region_cluster_region) <= 241){ # 241 = 192 (FABIO reg) + 49 (EXIO reg)
   
   # insert continent-clusters for EXIOBASE regions
   insert_data <- region_cluster_exio %>% 
-    dplyr::left_join(region_cluster, by = c("Continent" = "name")) %>% 
+    dplyr::left_join(region_cluster, by = c("continent" = "name")) %>% 
     dplyr::rename(id_region_cluster = id) %>% 
-    dplyr::left_join(region_exio[,c("id", "name")], by = c("EXIOregion" = "name")) %>% 
+    dplyr::left_join(region_exio[,c("id", "name")], by = c("EXIOBASE" = "name")) %>% 
     dplyr::rename(id_region = id) %>% 
-    dplyr::select(id_region_cluster, id_region)
+    dplyr::select(id_region_cluster, id_region) %>% 
+    dplyr::distinct()
   # insert into db
   DBI::dbAppendTable(db, name = "region_cluster_region", value = insert_data)
   
