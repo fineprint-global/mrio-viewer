@@ -394,7 +394,12 @@ server <- function(input, output, session) {
       # Calculate footprints
       ############################################################################
       
-      if(cluster_mode && mode == modes[1]){
+      # the default query results are saved
+      if(mode == modes[1] &
+         from_region == region_conc$id[region_conc$name=="Brazil"] &
+         from_product == product_conc$id[product_conc$name=="Soyabeans"]){
+        results <- readRDS("results_BRA_Soy.rds")
+      } else if(cluster_mode && mode == modes[1]){
         results <- NULL
         
         for(from_region in from_regions){
