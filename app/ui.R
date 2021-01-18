@@ -121,23 +121,42 @@ ui <- function(request) {
                            selected = env_factor_conc[1,]$name)
           ),
           column(
-            width = 1,
-            numericInput(inputId = "top_n",
-                         label = "# regions to not aggregate",
-                         value = 5,
-                         min = 1,
-                         max = 49,
-                         step = 1)
+            width = 2,
+            div(
+              class = "settings_small clearfix",
+              div(class = "settings_label", "Settings"),
+              numericInput(inputId = "top_n",
+                           label = "regions shown separately",
+                           value = 5,
+                           min = 1,
+                           max = 49,
+                           step = 1),
+              numericInput(inputId = "agg_percent",
+                           label = "aggregate flows smaller than [%]",
+                           value = 3,
+                           min = 0,
+                           max = 100,
+                           step = 1)
+            )
           ),
-          column(
-            width = 1,
-            numericInput(inputId = "agg_percent",
-                         label = "aggregate flows smaller than [%]",
-                         value = 3,
-                         min = 0,
-                         max = 100,
-                         step = 1)
-          ),
+          # column(
+          #   width = 1,
+          #   numericInput(inputId = "top_n",
+          #                label = "# regions to not aggregate",
+          #                value = 5,
+          #                min = 1,
+          #                max = 49,
+          #                step = 1)
+          # ),
+          # column(
+          #   width = 1,
+          #   numericInput(inputId = "agg_percent",
+          #                label = "aggregate flows smaller than [%]",
+          #                value = 3,
+          #                min = 0,
+          #                max = 100,
+          #                step = 1)
+          # ),
           column(
             width = 1,
             align = "center",

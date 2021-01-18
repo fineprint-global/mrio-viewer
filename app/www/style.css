@@ -36,6 +36,63 @@ span.irs-single {
   color: #fff;
 }
 
+/* input elements */
+.tab-pane,
+.selectize-input {
+  font-size: 13px;
+}
+
+.settings_small {
+  font-size: 12px;
+  background-color: #dce4ec;
+  padding: 2px;
+  
+  border: 1px solid #dce4ec;
+  border-top-width: 1px;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,0.075);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.075);
+  -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+  -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+  transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+}
+.settings_small .settings_label {
+  text-align: center;
+  font-style: italic;
+  display: block;
+  border-bottom-style: dashed;
+  border-bottom-width: 1px;
+  border-bottom-color: rgb(149, 165, 166);
+}
+.settings_small .shiny-input-container {
+  margin-bottom: 0;
+}
+.settings_small label.control-label {
+  font-size: 12px;
+  background-color: #dce4ec;
+  display: block;
+  float: left;
+  width: 66%;
+}
+.settings_small input {
+  font-size: 12px;
+  height: 20px;
+  background-color: #dce4ec;
+  padding: 0;
+  width: 33%;
+  display: block;
+  float: left;
+}
+
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+} 
+
 /* legend for flows */
 ul.flow-legend {
   position: absolute; 
