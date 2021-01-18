@@ -114,7 +114,7 @@ for(year in year_range){
   rm(data)
   
   start <- Sys.time()
-  RPostgres::dbAppendTable(db, name = "final_demand", value = insert_data)
+  RPostgres::dbWriteTable(db, name = "final_demand", value = insert_data, append = TRUE)
   print(Sys.time()-start)
   # Time difference of 2.963786 hours
   

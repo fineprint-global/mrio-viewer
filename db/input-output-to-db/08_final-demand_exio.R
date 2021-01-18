@@ -95,7 +95,7 @@ for(year in year_range){
     dplyr::select(from_region, to_region, product, element, year, amount)
   
   start <- Sys.time()
-  RPostgres::dbAppendTable(db, name = "final_demand", value = insert_data)
+  RPostgres::dbWriteTable(db, name = "final_demand", value = insert_data, append = TRUE)
   print(Sys.time()-start)
   # Time difference of 59.15825 mins
   

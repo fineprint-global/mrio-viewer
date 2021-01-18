@@ -120,7 +120,7 @@ for(t in c(1:nrow(allocation))){
     
     start <- Sys.time()
     print("Saving current year to db")
-    RPostgres::dbAppendTable(db, name = "input-output_leontief", value = insert_data)
+    RPostgres::dbWriteTable(db, name = "input-output_leontief", value = insert_data, append = TRUE)
     print(Sys.time()-start)
     # Time difference of 32.3919 mins
     

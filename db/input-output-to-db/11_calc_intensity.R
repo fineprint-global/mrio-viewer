@@ -71,9 +71,10 @@ for(env_factor_id in env_factor_conc$id){
                       allocation = allocation_id,
                       env_factor = env_factor_id)
       
-      RPostgres::dbAppendTable(db, 
-                               name = "env_intensity_calculated", 
-                               value = e_io_leontief_env_int_new)
+      RPostgres::dbWriteTable(db, 
+                              name = "env_intensity_calculated", 
+                              value = e_io_leontief_env_int_new,
+                              append = TRUE)
       
       print(Sys.time()-start)
     }
