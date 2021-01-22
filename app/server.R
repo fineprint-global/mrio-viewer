@@ -400,7 +400,13 @@ server <- function(input, output, session) {
       if(mode == modes[1] &&
          from_region %in% region_conc$id[region_conc$name=="Brazil"] &&
          from_product == product_conc$id[product_conc$name=="Soyabeans"]){
-        results <- readRDS("results_BRA_Soy.rds")
+        # note: run "chown shiny:shiny shiny-data" in case this does not work
+        if(file.exists("www/shiny-data/results_BRA_Soy.rds")){
+          results <- readRDS("www/shiny-data/results_BRA_Soy.rds")
+        } else {
+          results <- calc_results_for_region(from_region, from_product, year, allocation, env_factor)
+          saveRDS(results, "www/shiny-data/results_BRA_Soy.rds")
+        }
       } else if(cluster_mode && mode == modes[1]){
         results <- NULL
         
