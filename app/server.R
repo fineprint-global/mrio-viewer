@@ -290,8 +290,6 @@ server <- function(input, output, session) {
     # the rest of the statement is in isolate() to prevent other inputs
     # from updating the plot
     isolate({
-      req(input$from_region)
-      req(input$from_product)
       req(input$year)
       req(input$allocation)
       req(input$env_factor)
@@ -341,9 +339,15 @@ server <- function(input, output, session) {
         
         from_region <- region_fabio$id[region_fabio$name==input$from_region]
         from_product <- product_fabio$id[product_fabio$name==input$from_product]
-      } else {
-        input_to_region_y <- sub(sprintf(" (%s)", name_fabio), "", input$to_region_y, fixed = TRUE)
-        input_to_region_y <- sub(sprintf(" (%s)", name_exio), "", input_to_region_y, fixed = TRUE)
+      } else { # mode == modes[2]
+        
+        if(input$destination_mode == dest_modes[1]){ # Food
+          input_to_region_y <- input$to_region_y_food
+          to_product <- product_conc$id[product_conc$name==input$to_product_food]
+        } else { # Nonfood
+          input_to_region_y <- input$to_region_y_nonfood
+          to_product <- product_conc$id[product_conc$name==input$to_product_nonfood]
+        }
         
         # is input-region just one region or a cluster?
         if(input_to_region_y %in% continents$name.cluster){ # is cluster
@@ -366,8 +370,6 @@ server <- function(input, output, session) {
         }
         # define the number of steps for the progress bar to reach 100%
         n_steps <- 6
-        
-        to_product <- product_conc$id[product_conc$name==input$to_product]
       }
       
       year <- input$year
@@ -395,8 +397,8 @@ server <- function(input, output, session) {
       ############################################################################
       
       # the default query results are saved
-      if(mode == modes[1] &
-         from_region == region_conc$id[region_conc$name=="Brazil"] &
+      if(mode == modes[1] &&
+         from_region %in% region_conc$id[region_conc$name=="Brazil"] &&
          from_product == product_conc$id[product_conc$name=="Soyabeans"]){
         results <- readRDS("results_BRA_Soy.rds")
       } else if(cluster_mode && mode == modes[1]){
@@ -496,7 +498,16 @@ server <- function(input, output, session) {
               dplyr::ungroup()
           }
         }
-        if(is.null(results)){
+      }
+      
+      if(is.null(results)){
+        if(mode == modes[1]){
+          return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f).",
+                                        allocation_conc$name[allocation_conc$id == allocation], 
+                                        product_conc$name[product_conc$id == from_product], 
+                                        region_fabio$name[region_fabio$id == from_region], 
+                                        year)))
+        } else {
           return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f).",
                                         allocation_conc$name[allocation_conc$id == allocation], 
                                         product_conc$name[product_conc$id == to_product], 

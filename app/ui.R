@@ -57,7 +57,7 @@ ui <- function(request) {
                            selected = modes[1])
           ),
           # mode: normal direction
-          conditionalPanel(condition = "input.mode == 'origin'",
+          conditionalPanel(condition = paste0("input.mode == '",modes[1],"'"),
             column(
               width = 2,
               selectizeInput(inputId = "from_region",
@@ -77,24 +77,53 @@ ui <- function(request) {
             )
           ),
           # mode: reverse direction
-          conditionalPanel(condition = "input.mode == 'destination'",
+          conditionalPanel(condition = paste0("input.mode == '",modes[2],"'"),
             column(
-             width = 2,
-             selectizeInput(inputId = "to_region_y",
-                            label = "Destination region",
-                            choices = list(
-                              "FABIO Regions" = sprintf("%s (%s)", region_fabio$name, name_fabio),
-                              "EXIOBASE Regions" = sprintf("%s (%s)", region_exio$name, name_exio),
-                              "Cluster" = continents$name.cluster
-                            ),
-                            selected = "European Union") # sprintf("%s (%s)", "Austria", name_fabio))
+              width = 1,
+              selectizeInput(inputId = "destination_mode",
+                             label = "Use",
+                             choices = dest_modes,
+                             selected = dest_modes[1])
             ),
-            column(
-             width = 2,
-             selectizeInput(inputId = "to_product",
-                            label = "Destination product",
-                            choices = product_destination_dropdown,
-                            selected = "Bovine Meat")
+            conditionalPanel(
+              condition = paste0("input.destination_mode == '",dest_modes[1],"'"),
+              column(
+                width = 1,
+                selectizeInput(inputId = "to_region_y_food",
+                               label = "Destination region",
+                               choices = list(
+                                 "Region" = region_fabio$name,
+                                 "Cluster" = continents$name.cluster
+                               ),
+                               selected = "European Union")
+              ),
+              column(
+                width = 2,
+                selectizeInput(inputId = "to_product_food",
+                               label = "Destination product",
+                               choices = product_dropdown,
+                               selected = "Bovine Meat")
+              )
+            ),
+            conditionalPanel(
+              condition = paste0("input.destination_mode == '",dest_modes[2],"'"),
+              column(
+                width = 1,
+                selectizeInput(inputId = "to_region_y_nonfood",
+                               label = "Destination region",
+                               choices = list(
+                                 "Region" = region_exio$name,
+                                 "Cluster" = continents$name.cluster
+                               ),
+                               selected = "European Union")
+              ),
+              column(
+                width = 2,
+                selectizeInput(inputId = "to_product_nonfood",
+                               label = "Destination product",
+                               choices = product_destination_dropdown["Non-food"],
+                               selected = "Biodiesels")
+              )
             )
           ),
           column(
@@ -183,8 +212,8 @@ ui <- function(request) {
         fluidRow(
           conditionalPanel(condition = "input.mode == 'origin'",
                            tags$ul(class = "flow-legend clearfix",
-                                   tags$li(HTML(paste("<span>&nbsp;</span>", name_fabio))),
-                                   tags$li(HTML(paste("<span>&nbsp;</span>", name_exio)))),
+                                   tags$li(HTML(paste("<span>&nbsp;</span>", "Agricultural products"))),
+                                   tags$li(HTML(paste("<span>&nbsp;</span>", "Nonfood products")))),
                            tags$ul(class = "description clearfix",
                                    tags$li("region & product of origin"),
                                    tags$li("(final) producing region"),
@@ -192,8 +221,8 @@ ui <- function(request) {
                                    tags$li("consuming region"))),
           conditionalPanel(condition = "input.mode == 'destination'",
                            tags$ul(class = "flow-legend2 clearfix",
-                                   tags$li(HTML(paste("<span>&nbsp;</span>", name_fabio))),
-                                   tags$li(HTML(paste("<span>&nbsp;</span>", name_exio)))),
+                                   tags$li(HTML(paste("<span>&nbsp;</span>", "Agricultural products"))),
+                                   tags$li(HTML(paste("<span>&nbsp;</span>", "Nonfood products")))),
                            tags$ul(class = "description2 clearfix",
                                    tags$li("region of origin"),
                                    tags$li("(final) producing region"),

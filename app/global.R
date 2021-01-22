@@ -47,6 +47,7 @@ onStop(function() { # this is required to close the pool so we have no leaking c
 name_fabio <- "FABIO"
 name_exio <- "EXIOBASE"
 modes <- c("origin", "destination")
+dest_modes <- c("Food uses", "Nonfood uses")
 
 # Region -----------------------------------------------------------------------
 # here, we create region_fabio and _exio to be able to 
@@ -130,7 +131,7 @@ product_unit_conc <- dplyr::tbl(pool, "product_unit") %>% dplyr::collect()
 ## create list for input-dropdown
 product_dropdown <- list()
 # group this list by product group
-for(product_group in product_group_conc$id){
+for(product_group in product_group_conc$id[product_group_conc$name != name_exio]){
   product_group_name <- product_group_conc$name[product_group_conc$id == product_group]
   
   product_dropdown[product_group_name] <- list(
