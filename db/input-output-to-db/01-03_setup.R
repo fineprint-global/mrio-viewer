@@ -6,6 +6,7 @@
 # install.packages(c("DBI", "RPostgreSQL", "countrycode", "tidyverse", "Matrix"))
 
 library(tidyverse)
+library(Matrix)
 
 ##################################################################
 ### 2. Setup environment variables
@@ -45,6 +46,7 @@ if(file_type != "rds" &&
 #        - hybrid/...B ()
 
 file_format <- paste0(folder_path, "%i_%s.", file_type) # e.g. /mnt/nfs_fineprint/tmp/fabio/2013_X.rds
+file_format_noyear <- paste0(folder_path, "%s.", file_type) 
 # adds an additional argument to the format to allow to state a subfolder first
 file_format_subfolder <- paste0(folder_path, "%s/%i_%s.", file_type) 
 
@@ -67,7 +69,7 @@ file_names <- data.frame(
 ## other crucial information
 
 # define the year range of data to insert into the database
-year_range_orig <- c(2013:2010) # 1986
+year_range_orig <- c(2013:2012) # 1986 or 1995 for EXIOBASE
 
 # names used for FABIO and EXIOBASE
 name_fabio <- "FABIO"

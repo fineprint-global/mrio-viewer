@@ -85,87 +85,86 @@ year_range <- c(year_range_biomass, year_range_landuse[!(year_range_landuse %in%
 
 start <- Sys.time()
 
+data_E <- read_file_function(sprintf(file_format_noyear, file_names$E[1]))
+data_X <- read_file_function(sprintf(file_format_noyear, file_names$X[1]))
+
 for(year in year_range){
   print(paste("Year", year, "/", year_range[length(year_range)]))
   
-  data <- read_file_function(sprintf(file_format, year, "E")) %>% 
-    # change the naming of Côte d'Ivoire to reflect its special character
-    # to be able to match it later
-    dplyr::mutate(Country = str_replace(Country, 
-                                        "C\xf4te d'Ivoire", 
-                                        region_fabio$name[78]))
-
-  # get environmental use variables - make sure they match the format used in your data
-  env_factor$name_data <- paste0(toupper(substr(env_factor$name, 1, 1)),
-                                 substr(env_factor$name, 2, nchar(env_factor$name)))
+  # environmental impact data --------------------------------------------------
   
-  # prepare environmental data -> unselect unnecessary cols, add ids for region and product
-  env_data <- data %>%
+  env_data <- data_E[[as.character(year)]] %>% 
+    # join product
+    dplyr::left_join(product[,c("other_id","id")], by = c("comm_code" = "other_id")) %>% 
+    dplyr::select(-comm_code, -item, -item_code, -comm_group, -group) %>% 
+    dplyr::rename(from_product = id) %>% 
+    # join region
+    dplyr::left_join(region[,c("id", "name")], by = c("area" = "name")) %>% 
+    dplyr::select(-area, -area_code) %>% 
+    dplyr::rename(from_region = id) %>% 
     # filter so we only keep variables 
-    dplyr::filter(abs(round(Landuse, digits = 2)) >= 0.01 |
-                  abs(round(Biomass, digits = 2)) >= 0.01) %>%
-    dplyr::select(-Country.Code, -Item.Code, -Com.Code, -Group, -ID) %>%
-    # REGION: join table, add ID, remove unnecessary cols
-    dplyr::left_join(region[,c("id", "name")], by = c("Country" = "name"), suffix = c("", ".region")) %>%
-    dplyr::rename("from_region" = "id") %>%
-    dplyr::select(-Country) %>%
-    # PRODUCT: join table, add ID, remove unnecessary cols
-    dplyr::left_join(product, by = c("Item" = "name"), suffix = c("", ".product")) %>%
-    dplyr::rename("from_product" = "id") %>%
-    dplyr::select(-Item, -product_unit, -product_group, -other_id) %>%
+    dplyr::filter(abs(round(landuse, digits = 2)) >= 0.01 |
+                  abs(round(biomass, digits = 2)) >= 0.01) %>%
     # add the year
     dplyr::mutate(year = year)
   
-  rm(data)
+  # total production data ------------------------------------------------------
   
   # get total production data
-  tp_data <- read_file_function(sprintf(file_format, year, file_names$X[1]))
+  tp_data <- data_X[,as.character(year)]
   # the order of products and countries is here:
-  # country 1 with total production for products from 1:130 (1 to 130)
-  # country 2 with total production for products from 1:130 (1.1 to 130.1)
+  # country 1 with total production for products from 1:125 (1 to 125)
+  # country 2 with total production for products from 1:125 (1.1 to 125.1)
   # ...
-  # country 192 with total production for products from 1:130 (1.191 to 130.191)
+  # country 192 with total production for products from 1:125 (1.191 to 125.191)
   
   total_production <- tp_data %>% 
     enframe(name = NULL) %>% # "product.country"
     #  as_tibble() %>% 
     # dplyr::mutate(year = year) %>%
-    dplyr::mutate(from_region = rep(region$id, each = 130)) %>% # each for 130 products, 4 elem * 192 countries
-    dplyr::mutate(from_product = rep(product$id, times = 192)) # 4 elements * 192 countries * 192 countries
+    dplyr::mutate(from_region = rep(region$id, each = n_product_fabio)) %>% # each for 125 products, 4 elem * 192 countries
+    dplyr::mutate(from_product = rep(product$id, times = n_region_fabio)) # 4 elements * 192 countries * 192 countries
   
   rm(tp_data)
   
+  # combine them ---------------------------------------------------------------
   data <- env_data %>% 
     dplyr::left_join(total_production, by = c("from_region" = "from_region", 
                                               "from_product" = "from_product")) %>% 
     dplyr::rename(total_production = value)
   
-  rm(total_production)
+  rm(total_production, env_data)
   
   if(year %in% year_range_biomass){
     insert_data <- data %>%
       dplyr::mutate(env_factor = env_factor$id[env_factor$name == "biomass"]) %>%
-      dplyr::rename("amount" = env_factor$name_data[env_factor$name == "biomass"]) %>%
+      dplyr::rename("amount" = "biomass") %>%
+      dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% 
       # now we create amount as an environmental pressure by dividing it by total_production
       dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
-      dplyr::select(from_region, from_product, env_factor, year, amount)
+      dplyr::select(from_region, from_product, env_factor, year, amount) %>% 
+      as.data.frame()
     
     # append env_intensity with the amount for the environmental factor currently in loop
-    RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
+    # RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
+    RPostgres::dbWriteTable(db, name = "env_intensity", value = insert_data, append = TRUE)
   }
   if(year %in% year_range_landuse){
     insert_data <- data %>%
       dplyr::mutate(env_factor = env_factor$id[env_factor$name == "landuse"]) %>%
-      dplyr::rename("amount" = env_factor$name_data[env_factor$name == "landuse"]) %>%
+      dplyr::rename("amount" = "landuse") %>%
+      dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% 
       # now we create amount as an environmental pressure by dividing it by total_production
       dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
-      dplyr::select(from_region, from_product, env_factor, year, amount)
+      dplyr::select(from_region, from_product, env_factor, year, amount) %>% 
+      as.data.frame()
     
     # append env_intensity with the amount for the environmental factor currently in loop
-    RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
+    # RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
+    RPostgres::dbWriteTable(db, name = "env_intensity", value = insert_data, append = TRUE)
   }
 
-  rm(data, env_data, insert_data)
+  rm(data, insert_data)
 }
 
 print("6. Populating env_intensity took")

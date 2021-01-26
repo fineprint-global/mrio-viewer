@@ -4,8 +4,6 @@
 
 print("10_input-output_exio.R")
 
-library(Matrix)
-
 # ----------------------------------------------------------------
 # preparation ----------------------------------------------------
 # ----------------------------------------------------------------
@@ -82,7 +80,7 @@ for(t in c(1:nrow(allocation))){
     
     # TEMPORARY until updated in underlying data
     # change the amount of livestock_products from 1000 head to head 
-    livestock_products <- product$id[product$product_group == product_group$id[product_group$name == "Livestock"]]
+    livestock_products <- product$id[product$product_group == product_group$id[product_group$name == "Live animals"]]
     insert_data <- insert_data %>% 
       dplyr::mutate(amount = if_else(from_product %in% livestock_products, 
                                      amount * 1000,
@@ -100,7 +98,8 @@ for(t in c(1:nrow(allocation))){
     print("Saving current year to db")
     RPostgres::dbWriteTable(db, name = "input-output_leontief", value = insert_data, append = TRUE)
     print(Sys.time()-start)
-    # Time difference of 16.63703 hours
+    # dbAppendTable - Time difference of 16.63703 hours
+    # dbWriteTable  - Time difference of 15.78698 mins
     
     rm(insert_data)
     gc()

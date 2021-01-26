@@ -5,15 +5,7 @@
 # ----------------------------------------------------------------
 
 # get other tables -----------------------------------------------
-source("app/global.R")
-
-db <-DBI::dbConnect(drv = RPostgres::Postgres(),
-                    host = Sys.getenv("db_host"),
-                    port = Sys.getenv("db_port"),
-                    dbname = Sys.getenv("db_name"),
-                    user = Sys.getenv("db_user"),
-                    password = Sys.getenv("db_password"))
-
+source("../../app/global.R")
 
 for(env_factor_id in env_factor_conc$id){
   for(allocation_id in allocation_conc$id){
@@ -71,7 +63,7 @@ for(env_factor_id in env_factor_conc$id){
                       allocation = allocation_id,
                       env_factor = env_factor_id)
       
-      RPostgres::dbWriteTable(db, 
+      RPostgres::dbWriteTable(pool, 
                               name = "env_intensity_calculated", 
                               value = e_io_leontief_env_int_new,
                               append = TRUE)
@@ -81,4 +73,7 @@ for(env_factor_id in env_factor_conc$id){
   }
 }
 
+# get a db object from pool since the sendQuery does not support pool
+db <- poolCheckout(pool)
 DBI::dbSendQuery(db, "GRANT SELECT ON TABLE env_intensity_calculated TO app;")
+poolReturn(db)

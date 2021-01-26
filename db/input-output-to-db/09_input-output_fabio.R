@@ -65,11 +65,14 @@ for(t in c(1:nrow(allocation))){
                 year, 
                 "and filtering it already"))
     
-    # change the data format from 192*130 columns to 2 columns and more rows
+    # change the data format from 192*125 columns to 2 columns and more rows
     # to easier get it into the database
     insert_data <- data %>%
+      as.matrix() %>% 
       as_tibble() %>% # as_tibble is needed because gather needs it
       gather(key = "product.region", value = "amount")
+      # the pivot_longer equivalent does not seem to work
+      # pivot_longer(names_to = "product.region", values_to = "amount")
     
     rm(data)
     
@@ -81,15 +84,15 @@ for(t in c(1:nrow(allocation))){
       # e.g. FROM_REG 1, FROM_PROD 1 and TO_REG 1, TO_PROD 1
       # then FROM_REG 1, FROM_PROD 2 and TO_REG 1, TO_PROD 1
       # ...
-      # then FROM_REG 192, FROM_PROD 130 and TO_REG 1, TO_PROD 1
+      # then FROM_REG 192, FROM_PROD 125 and TO_REG 1, TO_PROD 1
       # then FROM_REG 1, FROM_PROD 1 and TO_REG 1, TO_PROD 2
       # ...
-      # then FROM_REG 192, FROM_PROD 130 and TO_REG 1, TO_PROD 130
+      # then FROM_REG 192, FROM_PROD 125 and TO_REG 1, TO_PROD 125
       # then FROM_REG 1, FROM_PROD 1 and TO_REG 2, TO_PROD 1
       # ...
       # finally
-      # then FROM_REG 192, FROM_PROD 129 and TO_REG 192, TO_PROD 130
-      # then FROM_REG 192, FROM_PROD 130 and TO_REG 192, TO_PROD 130
+      # then FROM_REG 192, FROM_PROD 124 and TO_REG 192, TO_PROD 125
+      # then FROM_REG 192, FROM_PROD 125 and TO_REG 192, TO_PROD 125
       dplyr::select(-product.region) %>% 
       dplyr::mutate(from_region = rep(region$id, each = n_product, times = n_product*n_region)) %>% # each for 130 products, 130 products * 192 countries
       dplyr::mutate(from_product = rep(product$id, times = n_product*n_region^2)) %>% # 130 products * 192 countries * 192 countries
@@ -100,7 +103,7 @@ for(t in c(1:nrow(allocation))){
     
     # TEMPORARY until updated in underlying data
     # change the amount of livestock_products from 1000 head to head 
-    livestock_products <- product$id[product$product_group == product_group$id[product_group$name == "Livestock"]]
+    livestock_products <- product$id[product$product_group == product_group$id[product_group$name == "Live animals"]]
     
     insert_data <- insert_data %>% 
       dplyr::mutate(amount = if_else(from_product %in% livestock_products, 
@@ -122,7 +125,8 @@ for(t in c(1:nrow(allocation))){
     print("Saving current year to db")
     RPostgres::dbWriteTable(db, name = "input-output_leontief", value = insert_data, append = TRUE)
     print(Sys.time()-start)
-    # Time difference of 32.3919 mins
+    # dbAppendTable - Time difference of 32.3919 mins
+    # dbWriteTable  - Time difference of 24.38911 secs
     
     rm(insert_data)
     gc()
