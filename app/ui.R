@@ -112,7 +112,12 @@ ui <- function(request) {
                 selectizeInput(inputId = "to_region_y_nonfood",
                                label = "Destination region",
                                choices = list(
-                                 "Region" = region_exio$name,
+                                 "Region" = 
+                                   # we sort regions and RoW regions separately
+                                   c(region_exio$name[1:(nrow(region_exio)-5)] %>% 
+                                       base::sort(),
+                                     region_exio$name[(nrow(region_exio)-4):nrow(region_exio)] %>% 
+                                       base::sort()),
                                  "Cluster" = continents$name.cluster
                                ),
                                selected = "European Union")
@@ -122,7 +127,7 @@ ui <- function(request) {
                 selectizeInput(inputId = "to_product_nonfood",
                                label = "Destination product",
                                choices = product_destination_dropdown["Non-food"],
-                               selected = "Biodiesels")
+                               selected = product_destination_dropdown[["Non-food"]][4])
               )
             )
           ),

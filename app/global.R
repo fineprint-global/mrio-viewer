@@ -117,11 +117,11 @@ product_other <- list(
 # get first 130 products (FABIO products) and add "Food (aggregate)"
 product_fabio <- product_conc %>% 
   dplyr::slice(1:130) %>% 
-  dplyr::add_row(id = product_other$food, name = "Food (aggregate)")
+  dplyr::add_row(id = product_other$food, name = "Agricultural products, nes")
 # get the rest of the products (EXIO products) and add "Nonfood (aggregate)"
 product_exio <- product_conc %>% 
   dplyr::slice(131:nrow(product_conc)) %>% 
-  dplyr::add_row(id = product_other$nonfood, name = "Nonfood (aggregate)")
+  dplyr::add_row(id = product_other$nonfood, name = "Nonfood products, nes")
 # now combine the new product_fabio and _exio to get the updated product_conc
 product_conc <- rbind(product_fabio, product_exio)
 
@@ -144,7 +144,14 @@ for(product_group in product_group_conc$id[product_group_conc$name != name_exio]
 
 # separate dropdown for second mode (destination)
 product_destination_dropdown <- product_dropdown
-product_destination_dropdown["Non-food"] <- list(product_exio$name %>% base::sort())
+
+## aggregate some exio products
+product_exio_aggregates <- readxl::read_excel("www/data/EXIOBASE product aggregation.xlsx") %>% 
+  dplyr::select(exiobase_product = `EXIOBASE name`, aggregate = `Product group`)
+
+product_destination_dropdown["Non-food"] <- unique(product_exio_aggregates$aggregate) %>% 
+  base::sort() %>% 
+  list()
 
 # env_intensity ----------------------------------------------------------------
 env_intensity_tbl <- dplyr::tbl(pool, "env_intensity")

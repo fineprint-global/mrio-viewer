@@ -339,14 +339,25 @@ server <- function(input, output, session) {
         
         from_region <- region_fabio$id[region_fabio$name==input$from_region]
         from_product <- product_fabio$id[product_fabio$name==input$from_product]
+        product_name <- input$to_product_nonfood
       } else { # mode == modes[2]
         
         if(input$destination_mode == dest_modes[1]){ # Food
           input_to_region_y <- input$to_region_y_food
           to_product <- product_conc$id[product_conc$name==input$to_product_food]
+          product_name <- input$to_product_nonfood
         } else { # Nonfood
           input_to_region_y <- input$to_region_y_nonfood
-          to_product <- product_conc$id[product_conc$name==input$to_product_nonfood]
+          product_name <- input$to_product_nonfood
+          
+          if(input$to_product_nonfood %in% product_exio_aggregates$aggregate){
+            to_product_names <- 
+              product_exio_aggregates$exiobase_product[product_exio_aggregates$aggregate==
+                                                         input$to_product_nonfood]
+            to_product <- product_conc$id[product_conc$name %in% to_product_names]; rm(to_product_names)
+          } else {
+            to_product <- product_conc$id[product_conc$name==input$to_product_nonfood]
+          }
         }
         
         # is input-region just one region or a cluster?
@@ -510,13 +521,13 @@ server <- function(input, output, session) {
         if(mode == modes[1]){
           return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f).",
                                         allocation_conc$name[allocation_conc$id == allocation], 
-                                        product_conc$name[product_conc$id == from_product], 
+                                        product_name, 
                                         region_fabio$name[region_fabio$id == from_region], 
                                         year)))
         } else {
           return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f).",
                                         allocation_conc$name[allocation_conc$id == allocation], 
-                                        product_conc$name[product_conc$id == to_product], 
+                                        product_name, 
                                         input_to_region_y, 
                                         year)))
         }
@@ -817,7 +828,7 @@ server <- function(input, output, session) {
       
       if (mode == modes[2]){
         nodes$name[nodes$step == 3] <- sprintf("%s (%s)",
-                                               product_conc$name[product_conc$id==to_product],
+                                               product_name,
                                                input_to_region_y)
       }
       
@@ -873,9 +884,9 @@ server <- function(input, output, session) {
       ) %>%
         plotly::layout(
           title = list(
-            text = sprintf("total %s footprint: %.2e %s (%s-based allocation, %.0f)", 
+            text = sprintf("total %s footprint: %s %s (%s-based allocation, %.0f)", 
                            env_factor,
-                           sum(total_footprint),
+                           formatC(sum(total_footprint), digits = 0, format = "f", big.mark = ","),
                            if_else(env_factor %in% env_factor_conc$name,
                                    gsub("/product unit", "", env_factor_unit_conc$name[env_factor_unit_conc$id == 
                                                                                          env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1]),

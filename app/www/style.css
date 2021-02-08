@@ -8,12 +8,14 @@ body {
 
 /* UI elements */
 span.irs-bar-edge,
-span.irs-bar {
+span.irs-bar,
+.irs--shiny .irs-bar {
   border: none;
   background: none;
 }
 
-span.irs-single {
+span.irs-single,
+.irs--shiny .irs-single {
   background: #2c3e50;
 }
 
