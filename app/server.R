@@ -171,7 +171,11 @@ server <- function(input, output, session) {
                     year == !!year,
                     env_factor == !!env_factor_conc$id[env_factor_conc$name == env_factor]) %>% 
       dplyr::select(-id, -year, -env_factor) %>% 
-      dplyr::collect() %>% 
+      dplyr::collect()
+    
+    if(nrow(env_intensity) == 0) return(env_intensity)
+    
+    env_intensity <- env_intensity %>% 
       # check if all region&product combinations are present in final demand
       dplyr::filter(paste(from_region,from_product) %in% paste(unique_combos$from_region, 
                                                                unique_combos$from_product))
@@ -204,9 +208,7 @@ server <- function(input, output, session) {
       dplyr::summarise(amount = sum(amount, na.rm = TRUE)) %>%
       dplyr::collect()
     
-    if(nrow(final_demand) == 0){
-      return(NULL)
-    }
+    if(nrow(final_demand) == 0) return(NULL)
     
     # 2. get columns in L inverse we need
     # filtering separately and afterwards filtering again to have exact combo-matches
@@ -237,6 +239,8 @@ server <- function(input, output, session) {
       dplyr::distinct()
     
     e <- calc_env_intensity_m2(env_factor, unique_combos, year)
+    
+    if(nrow(e) == 0) return(NULL)
     
     # 4. join e with result df to calculate footprints
     result <- result %>% 
@@ -339,13 +343,12 @@ server <- function(input, output, session) {
         
         from_region <- region_fabio$id[region_fabio$name==input$from_region]
         from_product <- product_fabio$id[product_fabio$name==input$from_product]
-        product_name <- input$to_product_nonfood
+        product_name <- input$from_product
       } else { # mode == modes[2]
-        
         if(input$destination_mode == dest_modes[1]){ # Food
           input_to_region_y <- input$to_region_y_food
           to_product <- product_conc$id[product_conc$name==input$to_product_food]
-          product_name <- input$to_product_nonfood
+          product_name <- input$to_product_food
         } else { # Nonfood
           input_to_region_y <- input$to_region_y_nonfood
           product_name <- input$to_product_nonfood

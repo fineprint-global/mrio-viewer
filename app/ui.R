@@ -167,7 +167,7 @@ ui <- function(request) {
                            step = 1),
               numericInput(inputId = "agg_percent",
                            label = "aggregate flows smaller than [%]",
-                           value = 3,
+                           value = 1,
                            min = 0,
                            max = 100,
                            step = 1)
