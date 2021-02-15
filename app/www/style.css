@@ -2,7 +2,8 @@
 
 @import url('https://fonts.googleapis.com/css?family=Lato&display=swap');
 
-body {
+body,
+.irs {
   font-family: Lato, Arial, Helvetica, sans-serif;
 }
 

@@ -74,6 +74,6 @@ for(env_factor_id in env_factor_conc$id){
 }
 
 # get a db object from pool since the sendQuery does not support pool
-db <- poolCheckout(pool)
-DBI::dbSendQuery(db, "GRANT SELECT ON TABLE env_intensity_calculated TO app;")
-poolReturn(db)
+db_temp <- poolCheckout(pool)
+DBI::dbSendQuery(db_temp, "GRANT SELECT ON TABLE env_intensity_calculated TO app;")
+poolReturn(db_temp)
