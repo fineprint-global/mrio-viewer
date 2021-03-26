@@ -3,7 +3,7 @@
 CAUTION: Do not modify this file unless you know what you are doing.
          Unexpected results may occur if the code is changed deliberately.
 -->
-<dbmodel pgmodeler-ver="0.9.1" last-position="0,0" last-zoom="0.65"
+<dbmodel pgmodeler-ver="0.9.2" last-position="0,0" last-zoom="0.8" max-obj-count="21"
 	 default-schema="public" default-owner="postgres">
 <role name="app"
       login="true"
@@ -16,10 +16,10 @@ CAUTION: Do not modify this file unless you know what you are doing.
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 </database>
 
-<schema name="public" fill-color="#e1e1e1" sql-disabled="true">
+<schema name="public" layer="0" fill-color="#e1e1e1" sql-disabled="true">
 </schema>
 
-<table name="type">
+<table name="type" layer="0" collapse-mode="2" max-obj-count="2">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="240" y="1080"/>
@@ -34,10 +34,10 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="element">
+<table name="element" layer="0" collapse-mode="2" max-obj-count="3">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="620" y="1020"/>
+	<position x="620" y="1040"/>
 	<column name="id" not-null="true">
 		<type name="smallserial" length="0"/>
 	</column>
@@ -52,7 +52,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="final_demand">
+<table name="final_demand" layer="0" collapse-mode="2" max-obj-count="8">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="600" y="600"/>
@@ -86,7 +86,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	<schema name="public"/>
 </extension>
 
-<table name="region_cluster">
+<table name="region_cluster" layer="0" collapse-mode="2" max-obj-count="2">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="20" y="960"/>
@@ -101,7 +101,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="region">
+<table name="region" layer="0" collapse-mode="2" max-obj-count="4">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="20" y="620"/>
@@ -122,7 +122,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="region_aggregate">
+<table name="region_aggregate" layer="0" collapse-mode="2" max-obj-count="3">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="300" y="880"/>
@@ -137,7 +137,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="product_unit">
+<table name="product_unit" layer="0" collapse-mode="2" max-obj-count="2">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="1140" y="40"/>
@@ -152,7 +152,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="product">
+<table name="product" layer="0" collapse-mode="2" max-obj-count="6">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="1040" y="220"/>
@@ -176,7 +176,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="allocation">
+<table name="allocation" layer="0" collapse-mode="2" max-obj-count="2">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="1260" y="420"/>
@@ -191,7 +191,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="env_factor">
+<table name="env_factor" layer="0" collapse-mode="2" max-obj-count="3">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="400" y="20"/>
@@ -209,7 +209,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="env_factor_unit">
+<table name="env_factor_unit" layer="0" collapse-mode="2" max-obj-count="2">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="20" y="20"/>
@@ -224,7 +224,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<table name="input-output_leontief">
+<table name="input-output_leontief" layer="0" collapse-mode="2" max-obj-count="9">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="440" y="160"/>
@@ -257,23 +257,23 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO app;]]></appended-sql>
 	</constraint>
 </table>
 
-<textbox name="type_desc" font-size="9">
-	<position x="120" y="1140"/>
+<textbox name="type_desc" layer="0" font-size="9">
+	<position x="260" y="1180"/>
 	<comment><![CDATA[food or nonfood]]></comment>
 </textbox>
 
-<textbox name="element" font-size="9">
-	<position x="520" y="1140"/>
+<textbox name="element" layer="0" font-size="9">
+	<position x="580" y="1160"/>
 	<comment><![CDATA[food, stockchanges,
 or nonfood sector (households, state, etc.)]]></comment>
 </textbox>
 
-<textbox name="allocation_desc" font-size="9">
-	<position x="1400" y="500"/>
+<textbox name="allocation_desc" layer="0" font-size="9">
+	<position x="1320" y="520"/>
 	<comment><![CDATA[mass/value]]></comment>
 </textbox>
 
-<relationship name="many_region_cluster_has_many_region" type="relnn"
+<relationship name="many_region_cluster_has_many_region" type="relnn" layer="0"
 	 src-col-pattern="{sc}_{st}" dst-col-pattern="{sc}_{dt}"
 	 pk-pattern="{gt}_pk" uq-pattern="{gt}_uq"
 	 src-fk-pattern="{st}_fk" dst-fk-pattern="{dt}_fk"
@@ -294,7 +294,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	</label>
 </relationship>
 
-<table name="product_group">
+<table name="product_group" layer="0" collapse-mode="2" max-obj-count="2">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<position x="860" y="40"/>
@@ -309,10 +309,10 @@ or nonfood sector (households, state, etc.)]]></comment>
 	</constraint>
 </table>
 
-<table name="env_intensity">
+<table name="env_intensity" layer="0" collapse-mode="2" max-obj-count="7">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="20" y="120"/>
+	<position x="20" y="140"/>
 	<column name="id" not-null="true">
 		<type name="bigserial" length="0"/>
 	</column>
@@ -572,7 +572,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	<columns names="id" ref-type="dst-columns"/>
 </constraint>
 
-<relationship name="rel_element_type" type="relfk"
+<relationship name="rel_element_type" type="relfk" layer="0"
 	 src-table="public.element"
 	 dst-table="public.type" reference-fk="type_fk"
 	 src-required="false" dst-required="false">
@@ -584,26 +584,26 @@ or nonfood sector (households, state, etc.)]]></comment>
 	</label>
 </relationship>
 
-<relationship name="rel_final_demand_element" type="relfk"
+<relationship name="rel_final_demand_element" type="relfk" layer="0"
 	 src-table="public.final_demand"
 	 dst-table="public.element" reference-fk="element_fk"
 	 src-required="false" dst-required="false">
 	<label ref-type="name-label">
-		<position x="66.5358" y="-14.5266"/>
+		<position x="87.5071" y="-32.1266"/>
 	</label>
 </relationship>
 
-<relationship name="rel_region_aggregate_region" type="relfk"
+<relationship name="rel_region_aggregate_region" type="relfk" layer="0"
 	 src-table="public.region_aggregate"
 	 dst-table="public.region" reference-fk="region_aggregate_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_region_aggregate_region1" type="relfk"
+<relationship name="rel_region_aggregate_region1" type="relfk" layer="0"
 	 src-table="public.region_aggregate"
 	 dst-table="public.region" reference-fk="region_in_aggregate_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_final_demand_region" type="relfk"
+<relationship name="rel_final_demand_region" type="relfk" layer="0"
 	 src-table="public.final_demand"
 	 dst-table="public.region" reference-fk="from_region_fk"
 	 src-required="false" dst-required="false">
@@ -612,7 +612,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	</label>
 </relationship>
 
-<relationship name="rel_final_demand_region1" type="relfk"
+<relationship name="rel_final_demand_region1" type="relfk" layer="0"
 	 src-table="public.final_demand"
 	 dst-table="public.region" reference-fk="to_region_fk"
 	 src-required="false" dst-required="false">
@@ -621,7 +621,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	</label>
 </relationship>
 
-<relationship name="rel_product_product_unit" type="relfk"
+<relationship name="rel_product_product_unit" type="relfk" layer="0"
 	 src-table="public.product"
 	 dst-table="public.product_unit" reference-fk="product_unit_fk"
 	 src-required="false" dst-required="false">
@@ -630,52 +630,52 @@ or nonfood sector (households, state, etc.)]]></comment>
 	</label>
 </relationship>
 
-<relationship name="rel_final_demand_product" type="relfk"
+<relationship name="rel_final_demand_product" type="relfk" layer="0"
 	 src-table="public.final_demand"
 	 dst-table="public.product" reference-fk="product_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_env_factor_env_factor_unit" type="relfk"
+<relationship name="rel_env_factor_env_factor_unit" type="relfk" layer="0"
 	 src-table="public.env_factor"
 	 dst-table="public.env_factor_unit" reference-fk="env_factor_unit_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="&quot;rel_input-output-leontief_region&quot;" type="relfk"
+<relationship name="&quot;rel_input-output-leontief_region&quot;" type="relfk" layer="0"
 	 src-table="public.&quot;input-output_leontief&quot;"
 	 dst-table="public.region" reference-fk="from_region_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="&quot;rel_input-output-leontief_region1&quot;" type="relfk"
+<relationship name="&quot;rel_input-output-leontief_region1&quot;" type="relfk" layer="0"
 	 src-table="public.&quot;input-output_leontief&quot;"
 	 dst-table="public.region" reference-fk="to_region_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="&quot;rel_input-output-leontief_product&quot;" type="relfk"
+<relationship name="&quot;rel_input-output-leontief_product&quot;" type="relfk" layer="0"
 	 src-table="public.&quot;input-output_leontief&quot;"
 	 dst-table="public.product" reference-fk="from_product_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="&quot;rel_input-output-leontief_product1&quot;" type="relfk"
+<relationship name="&quot;rel_input-output-leontief_product1&quot;" type="relfk" layer="0"
 	 src-table="public.&quot;input-output_leontief&quot;"
 	 dst-table="public.product" reference-fk="to_product_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="&quot;rel_input-output-leontief_allocation&quot;" type="relfk"
+<relationship name="&quot;rel_input-output-leontief_allocation&quot;" type="relfk" layer="0"
 	 src-table="public.&quot;input-output_leontief&quot;"
 	 dst-table="public.allocation" reference-fk="allocation_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_product_product_group" type="relfk"
+<relationship name="rel_product_product_group" type="relfk" layer="0"
 	 src-table="public.product"
 	 dst-table="public.product_group" reference-fk="product_group_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_total_production_region" type="relfk"
+<relationship name="rel_total_production_region" type="relfk" layer="0"
 	 src-table="public.env_intensity"
 	 dst-table="public.region" reference-fk="from_region_fk"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_total_production_product" type="relfk"
+<relationship name="rel_total_production_product" type="relfk" layer="0"
 	 src-table="public.env_intensity"
 	 dst-table="public.product" reference-fk="from_product_fk"
 	 src-required="false" dst-required="false">
@@ -684,7 +684,7 @@ or nonfood sector (households, state, etc.)]]></comment>
 	</label>
 </relationship>
 
-<relationship name="rel_env_use_env_factor" type="relfk"
+<relationship name="rel_env_use_env_factor" type="relfk" layer="0"
 	 src-table="public.env_intensity"
 	 dst-table="public.env_factor" reference-fk="env_factor_fk"
 	 src-required="false" dst-required="false"/>
