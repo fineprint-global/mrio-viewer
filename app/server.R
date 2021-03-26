@@ -171,7 +171,11 @@ server <- function(input, output, session) {
                     year == !!year,
                     env_factor == !!env_factor_conc$id[env_factor_conc$name == env_factor]) %>% 
       dplyr::select(-id, -year, -env_factor) %>% 
-      dplyr::collect() %>% 
+      dplyr::collect()
+    
+    if(nrow(env_intensity) == 0) return(env_intensity)
+    
+    env_intensity <- env_intensity %>% 
       # check if all region&product combinations are present in final demand
       dplyr::filter(paste(from_region,from_product) %in% paste(unique_combos$from_region, 
                                                                unique_combos$from_product))
@@ -204,9 +208,7 @@ server <- function(input, output, session) {
       dplyr::summarise(amount = sum(amount, na.rm = TRUE)) %>%
       dplyr::collect()
     
-    if(nrow(final_demand) == 0){
-      return(NULL)
-    }
+    if(nrow(final_demand) == 0) return(NULL)
     
     # 2. get columns in L inverse we need
     # filtering separately and afterwards filtering again to have exact combo-matches
@@ -237,6 +239,8 @@ server <- function(input, output, session) {
       dplyr::distinct()
     
     e <- calc_env_intensity_m2(env_factor, unique_combos, year)
+    
+    if(nrow(e) == 0) return(NULL)
     
     # 4. join e with result df to calculate footprints
     result <- result %>% 
@@ -339,14 +343,24 @@ server <- function(input, output, session) {
         
         from_region <- region_fabio$id[region_fabio$name==input$from_region]
         from_product <- product_fabio$id[product_fabio$name==input$from_product]
+        product_name <- input$from_product
       } else { # mode == modes[2]
-        
         if(input$destination_mode == dest_modes[1]){ # Food
           input_to_region_y <- input$to_region_y_food
           to_product <- product_conc$id[product_conc$name==input$to_product_food]
+          product_name <- input$to_product_food
         } else { # Nonfood
           input_to_region_y <- input$to_region_y_nonfood
-          to_product <- product_conc$id[product_conc$name==input$to_product_nonfood]
+          product_name <- input$to_product_nonfood
+          
+          if(input$to_product_nonfood %in% product_exio_aggregates$aggregate){
+            to_product_names <- 
+              product_exio_aggregates$exiobase_product[product_exio_aggregates$aggregate==
+                                                         input$to_product_nonfood]
+            to_product <- product_conc$id[product_conc$name %in% to_product_names]; rm(to_product_names)
+          } else {
+            to_product <- product_conc$id[product_conc$name==input$to_product_nonfood]
+          }
         }
         
         # is input-region just one region or a cluster?
@@ -400,7 +414,13 @@ server <- function(input, output, session) {
       if(mode == modes[1] &&
          from_region %in% region_conc$id[region_conc$name=="Brazil"] &&
          from_product == product_conc$id[product_conc$name=="Soyabeans"]){
-        results <- readRDS("results_BRA_Soy.rds")
+        # note: run "chown shiny:shiny shiny-data" in case this does not work
+        if(file.exists("www/shiny-data/results_BRA_Soy.rds")){
+          results <- readRDS("www/shiny-data/results_BRA_Soy.rds")
+        } else {
+          results <- calc_results_for_region(from_region, from_product, year, allocation, env_factor)
+          saveRDS(results, "www/shiny-data/results_BRA_Soy.rds")
+        }
       } else if(cluster_mode && mode == modes[1]){
         results <- NULL
         
@@ -504,13 +524,13 @@ server <- function(input, output, session) {
         if(mode == modes[1]){
           return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f).",
                                         allocation_conc$name[allocation_conc$id == allocation], 
-                                        product_conc$name[product_conc$id == from_product], 
+                                        product_name, 
                                         region_fabio$name[region_fabio$id == from_region], 
                                         year)))
         } else {
           return(no_data_plotly(sprintf("There is not enough data to display %s-based allocation for %s from %s (%.0f).",
                                         allocation_conc$name[allocation_conc$id == allocation], 
-                                        product_conc$name[product_conc$id == to_product], 
+                                        product_name, 
                                         input_to_region_y, 
                                         year)))
         }
@@ -811,7 +831,7 @@ server <- function(input, output, session) {
       
       if (mode == modes[2]){
         nodes$name[nodes$step == 3] <- sprintf("%s (%s)",
-                                               product_conc$name[product_conc$id==to_product],
+                                               product_name,
                                                input_to_region_y)
       }
       
@@ -867,9 +887,9 @@ server <- function(input, output, session) {
       ) %>%
         plotly::layout(
           title = list(
-            text = sprintf("total %s footprint: %.2e %s (%s-based allocation, %.0f)", 
+            text = sprintf("total %s footprint: %s %s (%s-based allocation, %.0f)", 
                            env_factor,
-                           sum(total_footprint),
+                           formatC(sum(total_footprint), digits = 0, format = "f", big.mark = ","),
                            if_else(env_factor %in% env_factor_conc$name,
                                    gsub("/product unit", "", env_factor_unit_conc$name[env_factor_unit_conc$id == 
                                                                                          env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1]),

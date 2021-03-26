@@ -11,7 +11,7 @@ print("09_final-demand_exio.R")
 # element table --------------------------------------------------
 element <- RPostgres::dbReadTable(db, "element")
 
-if(nrow(element) <= 4){
+if(nrow(element) <= 6){
   
   # get type table for the nonfood-id
   type <- RPostgres::dbReadTable(db, "type")
@@ -35,7 +35,7 @@ if(nrow(element) <= 4){
   element <- RPostgres::dbReadTable(db, "element")
 }
 
-element_exio <- element %>% dplyr::slice(5:nrow(element))
+element_exio <- element %>% dplyr::slice(7:nrow(element))
 
 # ----------------------------------------------------------------
 # check years ----------------------------------------------------
@@ -65,13 +65,16 @@ year_range <- year_range[!(year_range < 1995)]
 # get data and insert --------------------------------------------
 # ----------------------------------------------------------------
 
+# # dont know what to use
+# read_file_function(sprintf(file_format_subfolder, "hybrid", year, file_names$B[1]))->test
+# data_Y <- read_file_function(sprintf(file_format_noyear, file_names$final_demand[1]))
+
 for(year in year_range){
   print(paste("10 Y2: Year", year, "/", year_range[length(year_range)]))
 
   # 343 columns, 49 regions, 7 stages per region
   load(paste0("/mnt/nfs_fineprint/tmp/exiobase/pxp/",year,"_Y.RData"))
-  Y_exio <- Y
-  rm(Y)
+  Y_exio <- Y; rm(Y)
   
   insert_data <- Y_exio %>%
     as_tibble() %>% # as_tibble is needed because gather needs it
@@ -97,7 +100,8 @@ for(year in year_range){
   start <- Sys.time()
   RPostgres::dbWriteTable(db, name = "final_demand", value = insert_data, append = TRUE)
   print(Sys.time()-start)
-  # Time difference of 59.15825 mins
+  # dbAppendTable - Time difference of 59.15825 mins
+  # dbWriteTable  - Time difference of 38.44202 secs
   
   rm(insert_data)
   gc()
