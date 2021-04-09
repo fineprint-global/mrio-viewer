@@ -69,7 +69,7 @@ file_names <- data.frame(
 ## other crucial information
 
 # define the year range of data to insert into the database
-year_range_orig <- c(2013:2012) # 1986 or 1995 for EXIOBASE
+year_range_orig <- c(2013:1986) # 1986 or 1995 for EXIOBASE
 
 # names used for FABIO and EXIOBASE
 name_fabio <- "FABIO"

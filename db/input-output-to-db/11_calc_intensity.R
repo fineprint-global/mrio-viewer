@@ -5,7 +5,8 @@
 # ----------------------------------------------------------------
 
 # get other tables -----------------------------------------------
-source("../../app/global.R")
+setwd("../../app")
+source("global.R")
 
 for(env_factor_id in env_factor_conc$id){
   for(allocation_id in allocation_conc$id){

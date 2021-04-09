@@ -18,7 +18,7 @@ if(nrow(env_factor_unit) == 0){
     # ha for landuse, tonnes for biomass
     # we divide by product unit because this is how we store the information
     # we divide the total landuse or biomass by the total production
-    name = c("ha/product unit", "tonnes/product unit")
+    name = c("ha/product unit", "tonnes/product unit", "hl/product unit")
   )
   
   DBI::dbAppendTable(db, name = "env_factor_unit", value = insert_data)
@@ -26,6 +26,20 @@ if(nrow(env_factor_unit) == 0){
   rm(insert_data)
   
   env_factor_unit <- RPostgres::dbReadTable(db, "env_factor_unit")
+  
+} else if(nrow(env_factor_unit) == 2){ # we don't have green and blue 
+    
+    # X.rds durch total prod of this year
+    insert_data <- data.frame(
+      # we divide by product unit because this is how we store the information
+      name = c("hl/product unit") # for water
+    )
+    
+    DBI::dbAppendTable(db, name = "env_factor_unit", value = insert_data)
+    
+    rm(insert_data)
+    
+    env_factor_unit <- RPostgres::dbReadTable(db, "env_factor_unit")
 }
 
 # env_factor table --------------------------------------------------
@@ -34,8 +48,19 @@ env_factor <- RPostgres::dbReadTable(db, "env_factor")
 if(nrow(env_factor) == 0){
   
   insert_data <- data.frame(
-    name = c("landuse", "biomass"),
-    env_factor_unit = env_factor_unit$id
+    name = c("landuse", "biomass", "green", "blue"),
+    env_factor_unit = c(env_factor_unit$id[1:2],env_factor_unit$id[1],env_factor_unit$id[3])
+  )
+  
+  DBI::dbAppendTable(db, name = "env_factor", value = insert_data)
+  
+  rm(insert_data)
+  
+  env_factor <- RPostgres::dbReadTable(db, "env_factor")
+} else if (nrow(env_factor) == 2){ # this indicates the "old setting" of just land and bm
+  insert_data <- data.frame(
+    name = c("green", "blue"),
+    env_factor_unit = c(env_factor_unit$id[1],env_factor_unit$id[3])
   )
   
   DBI::dbAppendTable(db, name = "env_factor", value = insert_data)
@@ -53,31 +78,27 @@ region <- region_fabio
 # get years that are not yet done ----------------------------------------------
 # ------------------------------------------------------------------------------
 
-# Check for which years we already have data for
-# care: in case you stopped an operation to the db or changed the original data
-# you should remove the data from the db before any other operations.
-year_range_landuse <- year_range_orig
-# get all years from the db
-query <- sprintf('SELECT DISTINCT year FROM "%s" WHERE env_factor = %.0f;', 
-                 "env_intensity", env_factor$id[env_factor$name == "landuse"])
-result <- RPostgres::dbGetQuery(db, query)$year
-# get all years that are NOT in the db
-year_range_landuse <- year_range_landuse[!(year_range_landuse %in% result)]
+year_range <- list()
+year_range_all <- c()
 
-rm(query, result)
-
-year_range_biomass <- year_range_orig
-# get all years from the db
-query <- sprintf('SELECT DISTINCT year FROM "%s" WHERE env_factor = %.0f;', 
-                 "env_intensity", env_factor$id[env_factor$name == "biomass"])
-result <- RPostgres::dbGetQuery(db, query)$year
-# get all years that are NOT in the db
-year_range_biomass <- year_range_biomass[!(year_range_biomass %in% result)]
-
-rm(query, result)
-
-# combine both to only collect data once
-year_range <- c(year_range_biomass, year_range_landuse[!(year_range_landuse %in% year_range_biomass)])
+for(env_factor_name in env_factor$name){
+  # Check for which years we already have data for
+  # care: in case you stopped an operation to the db or changed the original data
+  # you should remove the data from the db before any other operations.
+  year_range[[env_factor_name]] <- year_range_orig
+  # get all years from the db
+  query <- sprintf('SELECT DISTINCT year FROM "%s" WHERE env_factor = %.0f;', 
+                   "env_intensity", env_factor$id[env_factor$name == env_factor_name])
+  result <- RPostgres::dbGetQuery(db, query)$year
+  # get all years that are NOT in the db
+  year_range[[env_factor_name]] <- year_range[[env_factor_name]][!(year_range[[env_factor_name]] %in% result)]
+  
+  # merge them together to one list which includes each year to be iterated over
+  # where at least one env_factor is not yet in the db
+  year_range_all <- c(year_range_all, year_range[[env_factor_name]][!(year_range[[env_factor_name]] %in% year_range_all)])
+  
+  rm(query, result)
+}
 
 # ------------------------------------------------------------------------------
 # get data and insert ----------------------------------------------------------
@@ -88,8 +109,8 @@ start <- Sys.time()
 data_E <- read_file_function(sprintf(file_format_noyear, file_names$E[1]))
 data_X <- read_file_function(sprintf(file_format_noyear, file_names$X[1]))
 
-for(year in year_range){
-  print(paste("Year", year, "/", year_range[length(year_range)]))
+for(year in year_range_all){
+  print(paste("Year", year, "/", year_range_all[length(year_range_all)]))
   
   # environmental impact data --------------------------------------------------
   
@@ -135,35 +156,23 @@ for(year in year_range){
   
   rm(total_production, env_data)
   
-  if(year %in% year_range_biomass){
-    insert_data <- data %>%
-      dplyr::mutate(env_factor = env_factor$id[env_factor$name == "biomass"]) %>%
-      dplyr::rename("amount" = "biomass") %>%
-      dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% 
-      # now we create amount as an environmental pressure by dividing it by total_production
-      dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
-      dplyr::select(from_region, from_product, env_factor, year, amount) %>% 
-      as.data.frame()
-    
-    # append env_intensity with the amount for the environmental factor currently in loop
-    # RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
-    RPostgres::dbWriteTable(db, name = "env_intensity", value = insert_data, append = TRUE)
+  for(env_factor_name in env_factor$name){
+    if(year %in% year_range[[env_factor_name]]){
+      insert_data <- data %>%
+        dplyr::mutate(env_factor = env_factor$id[env_factor$name == env_factor_name]) %>%
+        dplyr::rename("amount" = env_factor_name) %>%
+        dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% 
+        # now we create amount as an environmental pressure by dividing it by total_production
+        dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
+        dplyr::select(from_region, from_product, env_factor, year, amount) %>% 
+        as.data.frame()
+      
+      # append env_intensity with the amount for the environmental factor currently in loop
+      # RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
+      RPostgres::dbWriteTable(db, name = "env_intensity", value = insert_data, append = TRUE)
+    }
   }
-  if(year %in% year_range_landuse){
-    insert_data <- data %>%
-      dplyr::mutate(env_factor = env_factor$id[env_factor$name == "landuse"]) %>%
-      dplyr::rename("amount" = "landuse") %>%
-      dplyr::filter(abs(round(amount, digits = 2)) >= 0.01) %>% 
-      # now we create amount as an environmental pressure by dividing it by total_production
-      dplyr::mutate(amount = ifelse(total_production == 0, 0, amount/total_production)) %>% 
-      dplyr::select(from_region, from_product, env_factor, year, amount) %>% 
-      as.data.frame()
-    
-    # append env_intensity with the amount for the environmental factor currently in loop
-    # RPostgres::dbAppendTable(db, name = "env_intensity", value = insert_data)
-    RPostgres::dbWriteTable(db, name = "env_intensity", value = insert_data, append = TRUE)
-  }
-
+  
   rm(data, insert_data)
 }
 
