@@ -8,6 +8,11 @@
 setwd("../../app")
 source("global.R")
 
+# get a db object from pool since the sendQuery does not support pool
+db_temp <- poolCheckout(pool)
+DBI::dbSendQuery(db_temp, "DROP TABLE IF EXISTS env_intensity_calculated;")
+poolReturn(db_temp)
+
 for(env_factor_id in env_factor_conc$id){
   for(allocation_id in allocation_conc$id){
     for(year in year_max_min$min:year_max_min$max){

@@ -18,7 +18,7 @@ if(nrow(env_factor_unit) == 0){
     # ha for landuse, tonnes for biomass
     # we divide by product unit because this is how we store the information
     # we divide the total landuse or biomass by the total production
-    name = c("ha/product unit", "tonnes/product unit", "hl/product unit")
+    name = c("ha/product unit", "tonnes/product unit", "m3/product unit")
   )
   
   DBI::dbAppendTable(db, name = "env_factor_unit", value = insert_data)
@@ -32,7 +32,7 @@ if(nrow(env_factor_unit) == 0){
     # X.rds durch total prod of this year
     insert_data <- data.frame(
       # we divide by product unit because this is how we store the information
-      name = c("hl/product unit") # for water
+      name = c("m3/product unit") # for water
     )
     
     DBI::dbAppendTable(db, name = "env_factor_unit", value = insert_data)
@@ -49,7 +49,7 @@ if(nrow(env_factor) == 0){
   
   insert_data <- data.frame(
     name = c("landuse", "biomass", "green", "blue"),
-    env_factor_unit = c(env_factor_unit$id[1:2],env_factor_unit$id[1],env_factor_unit$id[3])
+    env_factor_unit = c(env_factor_unit$id[1:2],env_factor_unit$id[3],env_factor_unit$id[3])
   )
   
   DBI::dbAppendTable(db, name = "env_factor", value = insert_data)
@@ -60,7 +60,7 @@ if(nrow(env_factor) == 0){
 } else if (nrow(env_factor) == 2){ # this indicates the "old setting" of just land and bm
   insert_data <- data.frame(
     name = c("green", "blue"),
-    env_factor_unit = c(env_factor_unit$id[1],env_factor_unit$id[3])
+    env_factor_unit = c(env_factor_unit$id[3],env_factor_unit$id[3])
   )
   
   DBI::dbAppendTable(db, name = "env_factor", value = insert_data)
