@@ -223,6 +223,12 @@ server <- function(input, output, session) {
       # check if all region&product combinations are present in final demand
       dplyr::filter(paste(to_region,to_product) %in% paste(final_demand$from_region, 
                                                            final_demand$product))
+    
+    # now we filter out "Grazing" since we show cropland footprint only
+    if(env_factor == "cropland"){
+      io_leontief <- io_leontief %>% dplyr::filter(from_product != product_conc$id[product_conc$name == "Grazing"])
+    }
+    
     # prepare results df containing almost all relevant info, only e is needed
     result <- io_leontief %>% 
       dplyr::left_join(final_demand, 
@@ -891,12 +897,15 @@ server <- function(input, output, session) {
                            env_factor,
                            formatC(sum(total_footprint), digits = 0, format = "f", big.mark = ","),
                            if_else(env_factor %in% env_factor_conc$name,
-                                   gsub("/product unit", "", env_factor_unit_conc$name[env_factor_unit_conc$id == 
-                                                                                         env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1]),
+                                   gsub("/product unit", "", 
+                                        gsub("m3", "m<sup>3</sup>", # change m3 to m^3
+                                             env_factor_unit_conc$name[env_factor_unit_conc$id == 
+                                                                                         env_factor_conc$env_factor_unit[env_factor_conc$name == env_factor]][1])),
                                    "product units"),
                            allocation_conc$name[allocation_conc$id == allocation], 
                            year),
-            x = 0.035
+            x = 0.035,
+            y = 0.99
           ),
           xaxis = list(showgrid = F, zeroline = F, showticklabels = F),
           yaxis = list(showgrid = F, zeroline = F, showticklabels = F)

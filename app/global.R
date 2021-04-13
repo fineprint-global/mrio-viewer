@@ -156,18 +156,33 @@ product_destination_dropdown["Non-food"] <- unique(product_exio_aggregates$aggre
 # env_intensity ----------------------------------------------------------------
 env_intensity_tbl <- dplyr::tbl(pool, "env_intensity")
 env_intensity_calculated_tbl <- dplyr::tbl(pool, "env_intensity_calculated")
+# query <- "SELECT EXISTS (
+#   SELECT FROM information_schema.tables
+#   WHERE  table_schema = 'public'
+#   AND    table_name   = 'env_intensity_calculated'
+# );"
+# result <- RPostgres::dbGetQuery(pool, query)$exists
+# if(result){ env_intensity_calculated_tbl <- dplyr::tbl(pool, "env_intensity_calculated")
+# } else { print("Warning: Make sure to pupulate env_intensity_calculated via file 11_.R") }
+
+env_factor_names <- c(
+  "landuse" = "cropland",
+  "biomass" = "primary biomass",
+  "blue" = "blue water",
+  "green" = "green water"
+)
+
 env_factor_conc <- dplyr::tbl(pool, "env_factor") %>% 
-  dplyr::collect() %>% 
-  # change the name of landuse and biomass
-  dplyr::mutate(name = if_else(name == "landuse", 
-                               "cropland", 
-                               if_else(name == "biomass", 
-                                       "primary biomass", 
-                                       name)))
+  dplyr::collect() %>%
+  # change the names  
+  dplyr::mutate(name = env_factor_names[name]); rm(env_factor_names)
+
 env_factor_unit_conc <- dplyr::tbl(pool, "env_factor_unit") %>% dplyr::collect()
 
 # IO-leontief ------------------------------------------------------------------
 io_leontief_tbl <- dplyr::tbl(pool, "input-output_leontief")
+# we use a materialized view to store pre-aggregated data for requests that would otherwise take up to 10 minutes:
+io_leontief_origin_tbl <- dplyr::tbl(pool, "mv_io_origin")
 allocation_conc <- dplyr::tbl(pool, "allocation") %>% dplyr::collect()
 
 # get max and min year from the IO-leontief to display to the user
